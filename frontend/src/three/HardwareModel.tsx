@@ -45,25 +45,31 @@ export const HardwareModel: React.FC = () => {
   const [selectedPart, setSelectedPart] = useState<HardwarePartId | null>(null)
   const [webGlSupported, setWebGlSupported] = useState(true)
 
-  // Simulation parameters from store to drive subtle neutral air particles
+  // Simulation parameters from store to drive atmospheric air orbs
   const status = useSimulatorStore((s) => s.status)
   const temperature = useSimulatorStore((s) => s.params.temperature)
-  const gasesCount = useSimulatorStore((s) => s.params.gases.length)
+  const humidity = useSimulatorStore((s) => s.params.humidity)
+  const airQuality = useSimulatorStore((s) => s.params.airQuality)
+  const gases = useSimulatorStore((s) => s.params.gases)
 
   // Refs to pass values into the Three.js loop without tearing down the scene
   const animStateRef = useRef({
     isRunning: false,
     temperature: 28.0,
-    gasesCount: 0,
+    humidity: 50,
+    airQuality: 45,
+    gases: [] as string[],
     focusedPart: null as HardwarePartId | null,
   })
 
   useEffect(() => {
     animStateRef.current.isRunning = status === 'running'
     animStateRef.current.temperature = temperature
-    animStateRef.current.gasesCount = gasesCount
+    animStateRef.current.humidity = humidity
+    animStateRef.current.airQuality = airQuality
+    animStateRef.current.gases = gases
     animStateRef.current.focusedPart = selectedPart
-  }, [status, temperature, gasesCount, selectedPart])
+  }, [status, temperature, humidity, airQuality, gases, selectedPart])
 
   useEffect(() => {
     const container = containerRef.current
@@ -741,34 +747,99 @@ export const HardwareModel: React.FC = () => {
       partWorldPositions.set(def.id, new THREE.Vector3(...def.pos))
     })
 
-    // Neutral grey air particles
-    const particleCount = 180
-    const particleGeo = new THREE.BufferGeometry()
-    const particlePositions = new Float32Array(particleCount * 3)
-    const particleSpeeds = new Float32Array(particleCount)
+    // Circular Soft Glow Orb Sprite Texture
+    const orbTex = canvasTexture(64, 64, (c, w, h) => {
+      const grad = c.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2 - 2)
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)')
+      grad.addColorStop(0.35, 'rgba(255, 255, 255, 0.85)')
+      grad.addColorStop(0.7, 'rgba(255, 255, 255, 0.3)')
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+      c.fillStyle = grad
+      c.fillRect(0, 0, w, h)
+    }).texture
 
-    for (let i = 0; i < particleCount; i++) {
-      particlePositions[i * 3] = (Math.random() - 0.5) * 6.0
-      particlePositions[i * 3 + 1] = 1.2 + Math.random() * 2.2
-      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 4.0
-      particleSpeeds[i] = 0.5 + Math.random() * 0.8
+    // 1. Main Atmospheric & Gas Orbs (color depends on gas; density depends on AQI)
+    const maxGasCount = 450
+    const gasGeo = new THREE.BufferGeometry()
+    const gasPositions = new Float32Array(maxGasCount * 3)
+    const gasSpeeds = new Float32Array(maxGasCount)
+
+    for (let i = 0; i < maxGasCount; i++) {
+      gasPositions[i * 3] = (Math.random() - 0.5) * 6.0
+      gasPositions[i * 3 + 1] = 1.25 + Math.random() * 2.2
+      gasPositions[i * 3 + 2] = (Math.random() - 0.5) * 4.0
+      gasSpeeds[i] = 0.5 + Math.random() * 0.8
     }
 
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3))
-
-    const particleMat = new THREE.PointsMaterial({
-      color: 0x86868b,
-      size: 0.04,
+    gasGeo.setAttribute('position', new THREE.BufferAttribute(gasPositions, 3))
+    const gasMat = new THREE.PointsMaterial({
+      map: orbTex,
+      size: 0.085,
+      color: 0xe2e8f0,
       transparent: true,
       opacity: 0.3,
+      depthWrite: false,
     })
+    const gasPoints = new THREE.Points(gasGeo, gasMat)
+    scene.add(gasPoints)
 
-    const airPoints = new THREE.Points(particleGeo, particleMat)
-    scene.add(airPoints)
+    // 2. Thermal Temperature Particles (soft red, low density based on temperature)
+    const maxTempCount = 50
+    const tempGeo = new THREE.BufferGeometry()
+    const tempPositions = new Float32Array(maxTempCount * 3)
+    const tempSpeeds = new Float32Array(maxTempCount)
+
+    for (let i = 0; i < maxTempCount; i++) {
+      tempPositions[i * 3] = (Math.random() - 0.5) * 5.6
+      tempPositions[i * 3 + 1] = 1.25 + Math.random() * 2.2
+      tempPositions[i * 3 + 2] = (Math.random() - 0.5) * 3.6
+      tempSpeeds[i] = 0.6 + Math.random() * 0.8
+    }
+
+    tempGeo.setAttribute('position', new THREE.BufferAttribute(tempPositions, 3))
+    const tempMat = new THREE.PointsMaterial({
+      map: orbTex,
+      size: 0.065,
+      color: 0xef4444,
+      transparent: true,
+      opacity: 0.38,
+      depthWrite: false,
+    })
+    const tempPoints = new THREE.Points(tempGeo, tempMat)
+    scene.add(tempPoints)
+
+    // 3. Moisture Humidity Particles (soft blue, low density based on humidity)
+    const maxHumCount = 50
+    const humGeo = new THREE.BufferGeometry()
+    const humPositions = new Float32Array(maxHumCount * 3)
+    const humSpeeds = new Float32Array(maxHumCount)
+
+    for (let i = 0; i < maxHumCount; i++) {
+      humPositions[i * 3] = (Math.random() - 0.5) * 5.6
+      humPositions[i * 3 + 1] = 1.25 + Math.random() * 2.2
+      humPositions[i * 3 + 2] = (Math.random() - 0.5) * 3.6
+      humSpeeds[i] = 0.5 + Math.random() * 0.7
+    }
+
+    humGeo.setAttribute('position', new THREE.BufferAttribute(humPositions, 3))
+    const humMat = new THREE.PointsMaterial({
+      map: orbTex,
+      size: 0.06,
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.38,
+      depthWrite: false,
+    })
+    const humPoints = new THREE.Points(humGeo, humMat)
+    scene.add(humPoints)
 
     cleanups.push(() => {
-      particleGeo.dispose()
-      particleMat.dispose()
+      gasGeo.dispose()
+      gasMat.dispose()
+      tempGeo.dispose()
+      tempMat.dispose()
+      humGeo.dispose()
+      humMat.dispose()
     })
 
     // Raycasting for Tap-to-Inspect
@@ -855,22 +926,84 @@ export const HardwareModel: React.FC = () => {
       animId = requestAnimationFrame(animate)
       clock += 0.016
 
-      const { isRunning, temperature: currentTemp, focusedPart } = animStateRef.current
+      const {
+        isRunning,
+        temperature: currentTemp,
+        humidity: currentHumidity,
+        airQuality: currentAqi,
+        gases: currentGases,
+        focusedPart,
+      } = animStateRef.current
 
-      // Particle simulation
-      if (airPoints) {
-        const positions = particleGeo.attributes.position.array as Float32Array
-        const speedMultiplier = isRunning ? 1.0 + (currentTemp - 20) * 0.04 : 0.25
+      // 1. Gas / AQI Orbs Density & Color
+      // Density: scales with AQI (40 particles for clean AQI up to 450 particles for bad AQI)
+      const clampedAqi = Math.min(500, Math.max(0, currentAqi ?? 45))
+      const targetGasCount = Math.round(40 + (clampedAqi / 500) * 410)
+      gasGeo.setDrawRange(0, targetGasCount)
 
-        for (let i = 0; i < particleCount; i++) {
-          positions[i * 3 + 2] += 0.008 * particleSpeeds[i] * speedMultiplier
-          if (positions[i * 3 + 2] > 2.5) {
-            positions[i * 3 + 2] = -2.5
-            positions[i * 3] = (Math.random() - 0.5) * 6.0
-          }
-        }
-        particleGeo.attributes.position.needsUpdate = true
+      // Color mapping:
+      // - CO: light green
+      // - Smoke: black / dark grey
+      // - LPG: yellow
+      // - None: white / light grey
+      const gasList = currentGases ?? []
+      if (gasList.includes('smoke')) {
+        gasMat.color.lerp(new THREE.Color(0x2d3748), 0.12) // dark grey / black
+        gasMat.opacity = THREE.MathUtils.lerp(gasMat.opacity, 0.35 + (clampedAqi / 500) * 0.45, 0.1)
+      } else if (gasList.includes('co')) {
+        gasMat.color.lerp(new THREE.Color(0x68d391), 0.12) // light green
+        gasMat.opacity = THREE.MathUtils.lerp(gasMat.opacity, 0.3 + (clampedAqi / 500) * 0.4, 0.1)
+      } else if (gasList.includes('lpg')) {
+        gasMat.color.lerp(new THREE.Color(0xfacc15), 0.12) // yellow
+        gasMat.opacity = THREE.MathUtils.lerp(gasMat.opacity, 0.3 + (clampedAqi / 500) * 0.4, 0.1)
+      } else {
+        gasMat.color.lerp(new THREE.Color(0xe2e8f0), 0.12) // white / light grey
+        gasMat.opacity = THREE.MathUtils.lerp(gasMat.opacity, 0.25 + (clampedAqi / 500) * 0.35, 0.1)
       }
+
+      // Animate Gas particle positions
+      const gasPos = gasGeo.attributes.position.array as Float32Array
+      const gasSpeedMul = isRunning ? 1.0 + (currentTemp - 20) * 0.03 : 0.25
+      for (let i = 0; i < targetGasCount; i++) {
+        gasPos[i * 3 + 2] += 0.007 * gasSpeeds[i] * gasSpeedMul
+        if (gasPos[i * 3 + 2] > 2.5) {
+          gasPos[i * 3 + 2] = -2.5
+          gasPos[i * 3] = (Math.random() - 0.5) * 6.0
+        }
+      }
+      gasGeo.attributes.position.needsUpdate = true
+
+      // 2. Temperature Particles (Red, low density based on temperature value)
+      const clampedTemp = Math.min(60, Math.max(0, currentTemp ?? 28))
+      const targetTempCount = Math.round(6 + (clampedTemp / 60) * 36) // 6 to 42 particles (low density)
+      tempGeo.setDrawRange(0, targetTempCount)
+      const tempPos = tempGeo.attributes.position.array as Float32Array
+      const tempSpeedMul = isRunning ? 1.2 : 0.35
+      for (let i = 0; i < targetTempCount; i++) {
+        tempPos[i * 3 + 1] += 0.008 * tempSpeeds[i] * tempSpeedMul // thermal convection upward
+        if (tempPos[i * 3 + 1] > 3.6) {
+          tempPos[i * 3 + 1] = 1.25
+          tempPos[i * 3] = (Math.random() - 0.5) * 5.6
+          tempPos[i * 3 + 2] = (Math.random() - 0.5) * 3.6
+        }
+      }
+      tempGeo.attributes.position.needsUpdate = true
+
+      // 3. Humidity Particles (Blue, low density based on humidity value)
+      const clampedHum = Math.min(100, Math.max(0, currentHumidity ?? 50))
+      const targetHumCount = Math.round(6 + (clampedHum / 100) * 36) // 6 to 42 particles (low density)
+      humGeo.setDrawRange(0, targetHumCount)
+      const humPos = humGeo.attributes.position.array as Float32Array
+      const humSpeedMul = isRunning ? 1.0 : 0.3
+      for (let i = 0; i < targetHumCount; i++) {
+        humPos[i * 3 + 2] += 0.006 * humSpeeds[i] * humSpeedMul
+        humPos[i * 3 + 1] += Math.sin(clock * 2 + i) * 0.002
+        if (humPos[i * 3 + 2] > 2.5) {
+          humPos[i * 3 + 2] = -2.5
+          humPos[i * 3] = (Math.random() - 0.5) * 5.6
+        }
+      }
+      humGeo.attributes.position.needsUpdate = true
 
       // Smooth camera easing when a part is inspected
       if (focusedPart && partWorldPositions.has(focusedPart)) {
