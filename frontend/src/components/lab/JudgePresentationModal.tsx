@@ -30,17 +30,34 @@ export const JudgePresentationModal: React.FC<JudgePresentationModalProps> = ({
   const activeEvents = latestPacket?.active_events || []
   const tier = latestPacket?.simulated_tier || 'GREEN'
 
+  // Escape key handler for keyboard accessibility
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onExit()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onExit])
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col p-4 sm:p-8 overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Judge Presentation: ${scenarioName}`}
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col p-4 sm:p-8 overflow-y-auto"
+    >
       {/* Top Header */}
       <div className="flex items-center justify-between pb-4 border-b border-[var(--border-subtle)]">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onExit}
-            className="px-3 py-1.5 rounded-lg bg-[var(--surface-secondary)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--foreground-default)] flex items-center gap-2 transition-colors"
+            aria-label="Exit Presentation Mode (Press Escape)"
+            className="px-3 py-1.5 rounded-lg bg-[var(--surface-secondary)] hover:bg-[var(--surface-hover)] border border-[var(--border-subtle)] text-xs font-mono text-[var(--foreground-default)] flex items-center gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus:outline-none"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Exit Presentation Mode
+            <ArrowLeft className="w-3.5 h-3.5" /> Exit Presentation Mode (Esc)
           </button>
           <div className="h-4 w-[1px] bg-[var(--border-subtle)]" />
           <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground-default)]">
