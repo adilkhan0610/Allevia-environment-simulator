@@ -3,14 +3,14 @@ import { PageContainer } from '@/components/layout/Containers'
 import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons'
 import { GlassPanel, SurfacePanel } from '@/components/ui/panels'
 import { TierBadge, ConnectionIndicator } from '@/components/ui/status'
-import { SectionHeading, BodyText, MonoValue, EyebrowLabel } from '@/components/ui/typography'
+import { SectionHeading, MonoValue, EyebrowLabel } from '@/components/ui/typography'
 import { useSimulationStore } from '@/store/simulationStore'
 import { useTelemetryStore } from '@/store/telemetryStore'
 import { apiClient } from '@/services/apiClient'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { DetectorBoxLazy } from '@/three/DetectorBoxLazy'
 import {
   Activity,
-  Box,
   Flame,
   Gauge,
   Play,
@@ -205,23 +205,9 @@ export const LabPage: React.FC = () => {
             </SurfacePanel>
           </div>
 
-          {/* Center Column: 3D Viewport Placeholder (Target for Phase 4) */}
-          <div className="lg:col-span-5 flex flex-col">
-            <GlassPanel variant="strong" className="flex-1 flex flex-col min-h-[420px] relative overflow-hidden led-edge">
-              <div className="absolute top-4 left-4 z-10">
-                <EyebrowLabel>3D VIEWPORT • PHASE 4 TARGET</EyebrowLabel>
-              </div>
-
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                <div className="h-24 w-24 rounded-[var(--radius-xl)] border border-[var(--accent)]/40 bg-[var(--accent-muted)] flex items-center justify-center text-[var(--accent)] mb-4 shadow-[0_0_30px_var(--accent-glow)]">
-                  <Box className="h-12 w-12 stroke-[1.5]" />
-                </div>
-                <h3 className="text-lg font-semibold text-[var(--foreground)]">Virtual 3D Detector Box</h3>
-                <BodyText size="sm" className="max-w-sm mt-2">
-                  Three.js, React Three Fiber, and Drei assembly will render here in Phase 4 with full orbit controls, exploded views, and perimeter glow.
-                </BodyText>
-              </div>
-            </GlassPanel>
+          {/* Center Column: Interactive 3D Viewport */}
+          <div className="lg:col-span-5 flex flex-col min-h-[480px]">
+            <DetectorBoxLazy />
           </div>
 
           {/* Right Column: Live Sensor Telemetry */}

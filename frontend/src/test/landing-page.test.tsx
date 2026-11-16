@@ -62,16 +62,15 @@ describe('ALLEVIA Landing Page (Phase 3)', () => {
     expect(exploreButton).toBeInTheDocument()
   })
 
-  it('renders the sophisticated DetectorBoxVisual placeholder', async () => {
+  it('renders the interactive 3D Detector Box hardware twin', async () => {
     const router = createTestRouter('/')
     await act(async () => {
       render(<RouterProvider router={router} />)
     })
 
-    expect(screen.getByText(/REV-3.2 • DETECTOR UNIT/i)).toBeInTheDocument()
-    expect(screen.getByText(/IR-OPT CLEAR/i)).toBeInTheDocument()
-    expect(screen.getByText(/Workforce Health Early Warning/i)).toBeInTheDocument()
-    expect(screen.getByText(/3D CAD Model \(Phase 4 Target\)/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/INITIALIZING 3D HARDWARE TWIN|ASSEMBLED TWIN|EXPLODED ASSEMBLY/i)
+    ).toBeInTheDocument()
   })
 
   it('renders the technical hardware strip with all 6 physical sensors', async () => {

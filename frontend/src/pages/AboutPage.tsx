@@ -3,7 +3,8 @@ import { PageContainer } from '@/components/layout/Containers'
 import { GlassPanel, SurfacePanel } from '@/components/ui/panels'
 import { DisplayHeading, SectionHeading, BodyText } from '@/components/ui/typography'
 import { StatusIndicator } from '@/components/ui/status'
-import { Cpu, Layers, ShieldCheck, AlertCircle } from 'lucide-react'
+import { DetectorBoxLazy } from '@/three/DetectorBoxLazy'
+import { Cpu, Layers, ShieldCheck, AlertCircle, Box } from 'lucide-react'
 
 export const AboutPage: React.FC = () => {
   const hardwareSensors = [
@@ -56,6 +57,15 @@ export const AboutPage: React.FC = () => {
           <BodyText className="mt-2">
             Detailed physical specifications, sensor channels, and architectural constraints governing the virtual simulator twin.
           </BodyText>
+        </div>
+
+        {/* Interactive 3D Exploded View Inspection */}
+        <div className="space-y-4">
+          <SectionHeading as="h2" className="flex items-center gap-2">
+            <Box className="h-4 w-4 text-[var(--accent)]" />
+            Interactive 3D Assembly &amp; Callout Inspection
+          </SectionHeading>
+          <DetectorBoxLazy exploded showCallouts className="h-[460px] sm:h-[500px]" />
         </div>
 
         {/* Physical Hardware Roster */}

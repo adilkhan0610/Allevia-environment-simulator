@@ -5,7 +5,7 @@ import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons'
 import { GlassPanel } from '@/components/ui/panels'
 import { DisplayHeading, SectionHeading, BodyText, EyebrowLabel } from '@/components/ui/typography'
 import { StatusIndicator, SimulatedBadge } from '@/components/ui/status'
-import { DetectorBoxVisual } from '@/components/shared/DetectorBoxVisual'
+import { DetectorBoxLazy } from '@/three/DetectorBoxLazy'
 import { HardwareStrip } from '@/components/shared/HardwareStrip'
 import { HowItWorksSection } from '@/components/shared/HowItWorksSection'
 import { apiClient } from '@/services/apiClient'
@@ -102,9 +102,9 @@ export const IntroPage: React.FC = () => {
               </div>
             </motion.div>
 
-            {/* Right Column: Sophisticated Physical Detector Box Visual Placeholder */}
-            <motion.div variants={fadeIn} className="lg:col-span-5 flex justify-center">
-              <DetectorBoxVisual />
+            {/* Right Column: Interactive 3D Detector Box Hardware Twin */}
+            <motion.div variants={fadeIn} className="lg:col-span-5 flex justify-center w-full">
+              <DetectorBoxLazy />
             </motion.div>
           </motion.div>
         </div>

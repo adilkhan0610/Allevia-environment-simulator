@@ -43,7 +43,7 @@ describe('Routing & Page Navigation', () => {
 
     expect(screen.getByText(/Interactive Simulation Lab/i)).toBeInTheDocument()
     expect(screen.getByText(/Scenario Selector/i)).toBeInTheDocument()
-    expect(screen.getByText(/Virtual 3D Detector Box/i)).toBeInTheDocument()
+    expect(screen.getByText(/Device State/i)).toBeInTheDocument()
   })
 
   it('renders AboutPage on route "/about"', async () => {
