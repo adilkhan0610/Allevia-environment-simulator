@@ -14,6 +14,7 @@ export const TopNavigation: React.FC = () => {
   const navLinks = [
     { name: 'Overview', path: '/' },
     { name: 'Simulation Lab', path: '/lab' },
+    { name: 'Hardware & Architecture', path: '/about' },
     { name: 'How It Works', path: '/#how-it-works' },
   ]
 
@@ -126,6 +127,14 @@ export const TopNavigation: React.FC = () => {
             >
               <Activity className="h-4 w-4 text-[var(--accent)]" />
               <span>Simulation Lab</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleLinkClick('/about')}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[var(--foreground)] hover:bg-[var(--surface-elevated)] text-left"
+            >
+              <Cpu className="h-4 w-4 text-[var(--accent)]" />
+              <span>Hardware &amp; Architecture</span>
             </button>
             <button
               type="button"

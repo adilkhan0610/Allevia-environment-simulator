@@ -52,9 +52,9 @@ describe('Routing & Page Navigation', () => {
       render(<RouterProvider router={router} />)
     })
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Detector Box Architecture/i)
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/System Architecture & Hardware Twin/i)
     expect(screen.getByText(/Arduino Uno Rev3/i)).toBeInTheDocument()
-    expect(screen.getByText(/BME280/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/BME280/i).length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders NotFoundPage on unknown route', async () => {
