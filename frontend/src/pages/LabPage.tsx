@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Container } from '@/components/shared/Container'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { PageContainer } from '@/components/layout/Containers'
+import { PrimaryButton, SecondaryButton } from '@/components/ui/buttons'
+import { GlassPanel, SurfacePanel } from '@/components/ui/panels'
+import { TierBadge, ConnectionIndicator } from '@/components/ui/status'
+import { SectionHeading, BodyText, MonoValue, EyebrowLabel } from '@/components/ui/typography'
 import { useSimulationStore } from '@/store/simulationStore'
 import { useTelemetryStore } from '@/store/telemetryStore'
 import { apiClient } from '@/services/apiClient'
@@ -83,48 +84,40 @@ export const LabPage: React.FC = () => {
     resetSimulation()
   }
 
-  const tierVariantMap: Record<string, 'green' | 'yellow' | 'orange' | 'red' | 'neutral'> = {
-    GREEN: 'green',
-    YELLOW: 'yellow',
-    ORANGE: 'orange',
-    RED: 'red',
-    FAULT: 'neutral',
-  }
-
   return (
     <div className="flex-1 py-8">
-      <Container size="wide">
+      <PageContainer size="wide">
         {/* Lab Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-[var(--border-subtle)]">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-white">Interactive Simulation Lab</h1>
-              <StatusBadge
-                status={`TIER: ${simulatedTier}`}
-                variant={tierVariantMap[simulatedTier] || 'neutral'}
-              />
+              <SectionHeading as="h1" className="text-2xl sm:text-3xl">
+                Interactive Simulation Lab
+              </SectionHeading>
+              <TierBadge tier={simulatedTier} />
             </div>
-            <p className="text-xs font-mono text-slate-400 mt-1">
-              Virtual Hardware Telemetry & Control Cockpit • Session: {sessionId || 'NONE (Offline)'}
+            <p className="text-xs font-mono text-[var(--foreground-muted)] mt-1">
+              Virtual Hardware Telemetry &amp; Control Cockpit • Session: {sessionId || 'NONE (Offline)'}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             {!sessionId ? (
-              <Button onClick={handleStartSession} disabled={loading} className="gap-2">
-                <Play className="h-4 w-4" />
+              <PrimaryButton onClick={handleStartSession} isLoading={loading} icon={<Play className="h-4 w-4" />}>
                 Initialize Simulation
-              </Button>
+              </PrimaryButton>
             ) : (
               <>
-                <Button variant="outline" onClick={resetSimulation} className="gap-2">
-                  <RotateCcw className="h-4 w-4" />
+                <SecondaryButton onClick={resetSimulation} icon={<RotateCcw className="h-4 w-4" />}>
                   Reset
-                </Button>
-                <Button variant="destructive" onClick={handleStopSession} className="gap-2">
-                  <Square className="h-4 w-4" />
+                </SecondaryButton>
+                <PrimaryButton
+                  onClick={handleStopSession}
+                  className="bg-[var(--status-red)] text-white hover:bg-[var(--status-red)]/90"
+                  icon={<Square className="h-4 w-4" />}
+                >
                   Terminate Session
-                </Button>
+                </PrimaryButton>
               </>
             )}
           </div>
@@ -134,204 +127,196 @@ export const LabPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
           {/* Left Column: Control Panel */}
           <div className="lg:col-span-4 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-cyan-400" />
-                  Scenario Selector
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-mono text-slate-400 uppercase">Active Scenario</label>
-                  <select
-                    value={selectedScenarioId}
-                    onChange={(e) => setSelectedScenarioId(e.target.value)}
-                    className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                  >
-                    {scenarios.map((sc) => (
-                      <option key={sc.id} value={sc.id}>
-                        {sc.name} ({sc.category})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <SurfacePanel className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-[var(--accent)]" />
+                <h3 className="text-base font-semibold text-[var(--foreground)]">Scenario Selector</h3>
+              </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-mono text-slate-400">
-                    <span>Intensity Multiplier</span>
-                    <span className="text-cyan-400">{intensityMultiplier.toFixed(1)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="2.0"
-                    step="0.1"
-                    value={intensityMultiplier}
-                    onChange={(e) => setIntensityMultiplier(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-400"
-                  />
-                </div>
+              <div className="space-y-2">
+                <EyebrowLabel>Active Scenario</EyebrowLabel>
+                <select
+                  value={selectedScenarioId}
+                  onChange={(e) => setSelectedScenarioId(e.target.value)}
+                  className="w-full rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--surface-elevated)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                >
+                  {scenarios.map((sc) => (
+                    <option key={sc.id} value={sc.id}>
+                      {sc.name} ({sc.category})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs font-mono text-slate-400">
-                    <span>Simulation Speed</span>
-                    <span className="text-cyan-400">{speedMultiplier.toFixed(1)}x</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="3.0"
-                    step="0.5"
-                    value={speedMultiplier}
-                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
-                    className="w-full accent-cyan-400"
-                  />
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-mono text-[var(--foreground-muted)]">
+                  <span>Intensity Multiplier</span>
+                  <span className="text-[var(--accent)]">{intensityMultiplier.toFixed(1)}x</span>
                 </div>
-              </CardContent>
-            </Card>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={intensityMultiplier}
+                  onChange={(e) => setIntensityMultiplier(parseFloat(e.target.value))}
+                  className="w-full accent-[var(--accent)]"
+                />
+              </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-cyan-400" />
-                  Device Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 font-mono text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Device ID</span>
-                  <span className="text-slate-200">{deviceId}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-mono text-[var(--foreground-muted)]">
+                  <span>Simulation Speed</span>
+                  <span className="text-[var(--accent)]">{speedMultiplier.toFixed(1)}x</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Connection</span>
-                  <span className="text-cyan-400">{connectionStatus}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Packets Emitted</span>
-                  <span className="text-slate-200">{sequenceNumber}</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-400">State</span>
-                  <span className="text-slate-200">{status}</span>
-                </div>
-              </CardContent>
-            </Card>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="3.0"
+                  step="0.5"
+                  value={speedMultiplier}
+                  onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                  className="w-full accent-[var(--accent)]"
+                />
+              </div>
+            </SurfacePanel>
+
+            <SurfacePanel className="space-y-3 font-mono text-xs">
+              <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
+                <Zap className="h-4 w-4 text-[var(--accent)]" />
+                <h3 className="text-sm font-semibold text-[var(--foreground)]">Device State</h3>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[var(--border-subtle)]">
+                <span className="text-[var(--foreground-muted)]">Device ID</span>
+                <span className="text-[var(--foreground)]">{deviceId}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-[var(--border-subtle)]">
+                <span className="text-[var(--foreground-muted)]">Connection</span>
+                <ConnectionIndicator status={connectionStatus} />
+              </div>
+              <div className="flex justify-between py-1 border-b border-[var(--border-subtle)]">
+                <span className="text-[var(--foreground-muted)]">Packets Emitted</span>
+                <MonoValue size="sm">{sequenceNumber}</MonoValue>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-[var(--foreground-muted)]">Engine State</span>
+                <span className="text-[var(--foreground)]">{status}</span>
+              </div>
+            </SurfacePanel>
           </div>
 
           {/* Center Column: 3D Viewport Placeholder (Target for Phase 4) */}
           <div className="lg:col-span-5 flex flex-col">
-            <Card className="flex-1 flex flex-col min-h-[420px] relative overflow-hidden border-slate-800">
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                <StatusBadge status="3D VIEWPORT • PHASE 4 TARGET" variant="cyan" />
+            <GlassPanel variant="strong" className="flex-1 flex flex-col min-h-[420px] relative overflow-hidden led-edge">
+              <div className="absolute top-4 left-4 z-10">
+                <EyebrowLabel>3D VIEWPORT • PHASE 4 TARGET</EyebrowLabel>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-radial from-slate-900 to-[#08090D]">
-                <div className="h-24 w-24 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-4 shadow-[0_0_30px_rgba(0,240,255,0.15)]">
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                <div className="h-24 w-24 rounded-[var(--radius-xl)] border border-[var(--accent)]/40 bg-[var(--accent-muted)] flex items-center justify-center text-[var(--accent)] mb-4 shadow-[0_0_30px_var(--accent-glow)]">
                   <Box className="h-12 w-12 stroke-[1.5]" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">Virtual 3D Detector Box</h3>
-                <p className="text-xs text-slate-400 max-w-sm mt-2">
+                <h3 className="text-lg font-semibold text-[var(--foreground)]">Virtual 3D Detector Box</h3>
+                <BodyText size="sm" className="max-w-sm mt-2">
                   Three.js, React Three Fiber, and Drei assembly will render here in Phase 4 with full orbit controls, exploded views, and perimeter glow.
-                </p>
+                </BodyText>
               </div>
-            </Card>
+            </GlassPanel>
           </div>
 
           {/* Right Column: Live Sensor Telemetry */}
           <div className="lg:col-span-3 space-y-4">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-slate-400 flex items-center gap-2">
-              <Gauge className="h-3.5 w-3.5 text-cyan-400" />
+            <EyebrowLabel className="flex items-center gap-1.5">
+              <Gauge className="h-3.5 w-3.5 text-[var(--accent)]" />
               Live Sensor Registers
-            </h2>
+            </EyebrowLabel>
 
             {/* BME280 */}
-            <Card className="p-4 space-y-2 border-slate-800">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <GlassPanel variant="subtle" className="p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
                 <span className="flex items-center gap-1.5">
-                  <Thermometer className="h-3.5 w-3.5 text-emerald-400" />
+                  <Thermometer className="h-3.5 w-3.5 text-[var(--status-green)]" />
                   BME280 Environment
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">I2C (0x76)</span>
+                <span className="text-[10px] font-mono text-[var(--foreground-muted)]">I2C (0x76)</span>
               </div>
               <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-center">
-                <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">TEMP</span>
-                  <span className="text-sm font-semibold text-white">{readings.bme280.temperature_c.toFixed(1)}°C</span>
+                <div className="p-2 rounded-[var(--radius-sm)] bg-[var(--surface-elevated)] border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--foreground-muted)] block">TEMP</span>
+                  <MonoValue size="sm" unit="°C">{readings.bme280.temperature_c.toFixed(1)}</MonoValue>
                 </div>
-                <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">HUM</span>
-                  <span className="text-sm font-semibold text-white">{readings.bme280.humidity_pct.toFixed(0)}%</span>
+                <div className="p-2 rounded-[var(--radius-sm)] bg-[var(--surface-elevated)] border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--foreground-muted)] block">HUM</span>
+                  <MonoValue size="sm" unit="%">{readings.bme280.humidity_pct.toFixed(0)}</MonoValue>
                 </div>
-                <div className="p-2 rounded bg-slate-900/80 border border-slate-800">
-                  <span className="text-[10px] text-slate-500 block">BARO</span>
-                  <span className="text-xs font-semibold text-white">{readings.bme280.pressure_hpa.toFixed(0)}</span>
+                <div className="p-2 rounded-[var(--radius-sm)] bg-[var(--surface-elevated)] border border-[var(--border)]">
+                  <span className="text-[10px] text-[var(--foreground-muted)] block">BARO</span>
+                  <MonoValue size="sm">{readings.bme280.pressure_hpa.toFixed(0)}</MonoValue>
                 </div>
               </div>
-            </Card>
+            </GlassPanel>
 
             {/* MQ-2 */}
-            <Card className="p-4 space-y-2 border-slate-800">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <GlassPanel variant="subtle" className="p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
                 <span className="flex items-center gap-1.5">
-                  <Flame className="h-3.5 w-3.5 text-orange-400" />
+                  <Flame className="h-3.5 w-3.5 text-[var(--status-orange)]" />
                   MQ-2 Smoke/Gas
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">Pin A0</span>
+                <span className="text-[10px] font-mono text-[var(--foreground-muted)]">Pin A0</span>
               </div>
               <div className="flex items-baseline justify-between font-mono pt-1">
-                <span className="text-2xl font-bold text-white">{readings.mq2_raw}</span>
-                <span className="text-xs text-slate-400">/ 1023 ADC</span>
+                <MonoValue size="lg" highlight>{readings.mq2_raw}</MonoValue>
+                <span className="text-xs text-[var(--foreground-muted)]">/ 1023 ADC</span>
               </div>
-            </Card>
+            </GlassPanel>
 
             {/* MQ-7 */}
-            <Card className="p-4 space-y-2 border-slate-800">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <GlassPanel variant="subtle" className="p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
                 <span className="flex items-center gap-1.5">
-                  <Wind className="h-3.5 w-3.5 text-cyan-400" />
+                  <Wind className="h-3.5 w-3.5 text-[var(--accent)]" />
                   MQ-7 Carbon Monoxide
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">Pin A1</span>
+                <span className="text-[10px] font-mono text-[var(--foreground-muted)]">Pin A1</span>
               </div>
               <div className="flex items-baseline justify-between font-mono pt-1">
-                <span className="text-2xl font-bold text-white">{readings.mq7_raw}</span>
-                <span className="text-xs text-slate-400">/ 1023 ADC</span>
+                <MonoValue size="lg" highlight>{readings.mq7_raw}</MonoValue>
+                <span className="text-xs text-[var(--foreground-muted)]">/ 1023 ADC</span>
               </div>
-            </Card>
+            </GlassPanel>
 
             {/* MQ-135 */}
-            <Card className="p-4 space-y-2 border-slate-800">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <GlassPanel variant="subtle" className="p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
                 <span className="flex items-center gap-1.5">
-                  <Activity className="h-3.5 w-3.5 text-indigo-400" />
+                  <Activity className="h-3.5 w-3.5 text-[var(--accent)]" />
                   MQ-135 Air Quality
                 </span>
-                <span className="text-[10px] font-mono text-slate-500">Pin A2</span>
+                <span className="text-[10px] font-mono text-[var(--foreground-muted)]">Pin A2</span>
               </div>
               <div className="flex items-baseline justify-between font-mono pt-1">
-                <span className="text-2xl font-bold text-white">{readings.mq135_raw}</span>
-                <span className="text-xs text-slate-400">/ 1023 ADC</span>
+                <MonoValue size="lg" highlight>{readings.mq135_raw}</MonoValue>
+                <span className="text-xs text-[var(--foreground-muted)]">/ 1023 ADC</span>
               </div>
-            </Card>
+            </GlassPanel>
 
             {/* IR Beam Sensor */}
-            <Card className="p-4 space-y-2 border-slate-800">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <GlassPanel variant="subtle" className="p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--foreground)]">
                 <span>IR Beam Interrupter</span>
-                <span className="text-[10px] font-mono text-slate-500">Pin D2</span>
+                <span className="text-[10px] font-mono text-[var(--foreground-muted)]">Pin D2</span>
               </div>
               <div className="flex items-center justify-between font-mono pt-1">
-                <span className="text-xs text-slate-400">State:</span>
-                <StatusBadge
-                  status={readings.ir_state === 1 ? 'OBSTRUCTED' : 'CLEAR'}
-                  variant={readings.ir_state === 1 ? 'red' : 'green'}
-                />
+                <span className="text-xs text-[var(--foreground-muted)]">Beam Status:</span>
+                <span className="text-xs font-mono font-medium" style={{ color: readings.ir_state === 1 ? 'var(--status-red)' : 'var(--status-green)' }}>
+                  {readings.ir_state === 1 ? 'OBSTRUCTED' : 'CLEAR'}
+                </span>
               </div>
-            </Card>
+            </GlassPanel>
           </div>
         </div>
-      </Container>
+      </PageContainer>
     </div>
   )
 }

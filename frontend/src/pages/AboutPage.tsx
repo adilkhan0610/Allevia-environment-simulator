@@ -1,7 +1,8 @@
 import React from 'react'
-import { Container } from '@/components/shared/Container'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { PageContainer } from '@/components/layout/Containers'
+import { GlassPanel, SurfacePanel } from '@/components/ui/panels'
+import { DisplayHeading, SectionHeading, BodyText } from '@/components/ui/typography'
+import { StatusIndicator } from '@/components/ui/status'
 import { Cpu, Layers, ShieldCheck, AlertCircle } from 'lucide-react'
 
 export const AboutPage: React.FC = () => {
@@ -46,51 +47,45 @@ export const AboutPage: React.FC = () => {
 
   return (
     <div className="flex-1 py-12">
-      <Container size="narrow" className="space-y-10">
+      <PageContainer size="narrow" className="space-y-10">
         <div>
-          <StatusBadge status="HARDWARE SPECIFICATION" variant="cyan" />
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mt-3">
-            ALLEVIA Detector Box Architecture
-          </h1>
-          <p className="text-sm sm:text-base text-slate-400 mt-2">
+          <StatusIndicator label="HARDWARE SPECIFICATION" variant="cyan" />
+          <DisplayHeading as="h1" className="text-3xl sm:text-4xl mt-3">
+            Detector Box Architecture
+          </DisplayHeading>
+          <BodyText className="mt-2">
             Detailed physical specifications, sensor channels, and architectural constraints governing the virtual simulator twin.
-          </p>
+          </BodyText>
         </div>
 
         {/* Physical Hardware Roster */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Cpu className="h-4 w-4 text-cyan-400" />
+          <SectionHeading as="h2" className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-[var(--accent)]" />
             Verified Physical Components
-          </h2>
+          </SectionHeading>
 
           <div className="grid grid-cols-1 gap-4">
             {hardwareSensors.map((sensor) => (
-              <Card key={sensor.name} className="border-slate-800">
-                <CardHeader className="py-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <CardTitle className="text-base text-white">{sensor.name}</CardTitle>
-                    <span className="text-xs font-mono text-cyan-400">{sensor.pins}</span>
-                  </div>
-                  <span className="text-xs text-slate-400 font-medium">{sensor.role}</span>
-                </CardHeader>
-                <CardContent className="pb-4 pt-0">
-                  <p className="text-xs text-slate-300 font-mono leading-relaxed">{sensor.specs}</p>
-                </CardContent>
-              </Card>
+              <SurfacePanel key={sensor.name} className="p-5 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h3 className="text-base font-semibold text-[var(--foreground)]">{sensor.name}</h3>
+                  <span className="text-xs font-mono text-[var(--accent)]">{sensor.pins}</span>
+                </div>
+                <p className="text-xs text-[var(--foreground-muted)] font-medium">{sensor.role}</p>
+                <p className="text-xs text-[var(--foreground-secondary)] font-mono leading-relaxed">{sensor.specs}</p>
+              </SurfacePanel>
             ))}
           </div>
         </div>
 
         {/* Strict Physical Constraints Notice */}
-        <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardHeader>
-            <div className="flex items-center gap-2 text-amber-400 font-semibold text-sm">
-              <AlertCircle className="h-4 w-4" />
-              Negative Hardware Scope Constraints
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2 text-xs text-slate-300 font-mono">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--status-yellow)]/30 bg-[var(--status-yellow-bg)] p-6 space-y-3">
+          <div className="flex items-center gap-2 text-[var(--status-yellow)] font-semibold text-sm">
+            <AlertCircle className="h-4 w-4" />
+            Negative Hardware Scope Constraints
+          </div>
+          <div className="space-y-2 text-xs text-[var(--foreground-secondary)] font-mono">
             <p>
               • <strong>NO PM2.5 / Optical Particle Counters:</strong> The physical detector box does not contain laser dust sensors. No PM2.5 metrics are manufactured.
             </p>
@@ -100,53 +95,57 @@ export const AboutPage: React.FC = () => {
             <p>
               • <strong>NO Built-in Arduino Networking:</strong> The physical Uno communicates via serial. The simulator models the packet boundary accurately.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Data Isolation Principle */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-cyan-400" />
+          <SectionHeading as="h2" className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-[var(--accent)]" />
             Data Isolation &amp; Integrity
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 leading-relaxed font-mono">
+          </SectionHeading>
+          <BodyText size="sm" className="font-mono leading-relaxed">
             All packets generated in this simulator carry the immutable flag{' '}
-            <code className="text-cyan-400 bg-slate-900 px-1 py-0.5 rounded">source = &quot;simulated&quot;</code> and target the virtual sandbox zone{' '}
-            <code className="text-cyan-400 bg-slate-900 px-1 py-0.5 rounded">ZONE-SANDBOX-DEMO</code>. This ensures that mock environmental telemetry
+            <code className="text-[var(--accent)] bg-[var(--surface-elevated)] px-1 py-0.5 rounded">source = &quot;simulated&quot;</code> and target the virtual sandbox zone{' '}
+            <code className="text-[var(--accent)] bg-[var(--surface-elevated)] px-1 py-0.5 rounded">ZONE-SANDBOX-DEMO</code>. This ensures that mock environmental telemetry
             never pollutes genuine population epidemiology models or workforce health registries.
-          </p>
+          </BodyText>
         </div>
 
         {/* Project Roadmap Summary */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Layers className="h-4 w-4 text-cyan-400" />
+          <SectionHeading as="h2" className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-[var(--accent)]" />
             Phased Engineering Roadmap
-          </h2>
-          <div className="rounded-xl border border-slate-800 bg-[#0F1118]/80 p-4 space-y-2 font-mono text-xs">
-            <div className="flex justify-between py-1 border-b border-slate-800/80">
-              <span className="text-cyan-400">Phase 0: Architecture Blueprint</span>
-              <span className="text-emerald-400">COMPLETED</span>
+          </SectionHeading>
+          <GlassPanel variant="subtle" className="p-5 space-y-2 font-mono text-xs">
+            <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--accent)]">Phase 0: Architecture Blueprint</span>
+              <span className="text-[var(--status-green)] font-semibold">COMPLETED</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-800/80">
-              <span className="text-cyan-400">Phase 1: Foundation (Frontend + Backend)</span>
-              <span className="text-emerald-400">ACTIVE / COMPLETE</span>
+            <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--accent)]">Phase 1: Foundation (Frontend + Backend)</span>
+              <span className="text-[var(--status-green)] font-semibold">COMPLETED</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-800/80">
-              <span className="text-slate-400">Phase 2–4: Design System &amp; 3D Box</span>
-              <span className="text-slate-500">PENDING APPROVAL</span>
+            <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--accent)]">Phase 2: Design System &amp; Visual Identity</span>
+              <span className="text-[var(--status-green)] font-semibold">ACTIVE / COMPLETE</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-800/80">
-              <span className="text-slate-400">Phase 5–8: Simulation Physics &amp; Live Lab</span>
-              <span className="text-slate-500">SCHEDULED</span>
+            <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--foreground-muted)]">Phase 3–4: Landing Page &amp; 3D Box</span>
+              <span className="text-[var(--foreground-muted)]">NEXT UP</span>
             </div>
-            <div className="flex justify-between py-1">
-              <span className="text-slate-400">Phase 10: Real Backend Integration</span>
-              <span className="text-slate-500">PLANNED</span>
+            <div className="flex justify-between py-1.5 border-b border-[var(--border-subtle)]">
+              <span className="text-[var(--foreground-muted)]">Phase 5–8: Simulation Physics &amp; Live Lab</span>
+              <span className="text-[var(--foreground-muted)]">SCHEDULED</span>
             </div>
-          </div>
+            <div className="flex justify-between py-1.5">
+              <span className="text-[var(--foreground-muted)]">Phase 10: Real Backend Integration</span>
+              <span className="text-[var(--foreground-muted)]">PLANNED</span>
+            </div>
+          </GlassPanel>
         </div>
-      </Container>
+      </PageContainer>
     </div>
   )
 }

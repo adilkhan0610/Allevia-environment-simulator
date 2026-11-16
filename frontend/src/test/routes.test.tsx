@@ -32,7 +32,7 @@ describe('Routing & Page Navigation', () => {
     })
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/ALLEVIA/i)
-    expect(screen.getByRole('link', { name: /Enter Interactive Lab/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Enter Interactive Lab/i })).toBeInTheDocument()
   })
 
   it('renders LabPage on route "/lab"', async () => {
@@ -52,7 +52,7 @@ describe('Routing & Page Navigation', () => {
       render(<RouterProvider router={router} />)
     })
 
-    expect(screen.getByText(/ALLEVIA Detector Box Architecture/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Detector Box Architecture/i)
     expect(screen.getByText(/Arduino Uno Rev3/i)).toBeInTheDocument()
     expect(screen.getByText(/BME280/i)).toBeInTheDocument()
   })

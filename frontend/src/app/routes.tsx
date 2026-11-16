@@ -4,6 +4,7 @@ import { IntroPage } from '@/pages/IntroPage'
 import { LabPage } from '@/pages/LabPage'
 import { AboutPage } from '@/pages/AboutPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { DesignSystemPreviewPage } from '@/pages/DesignSystemPreviewPage'
 
 export const router = createBrowserRouter([
   {
@@ -21,6 +22,10 @@ export const router = createBrowserRouter([
       {
         path: 'about',
         element: <AboutPage />,
+      },
+      {
+        path: 'design-system',
+        element: <DesignSystemPreviewPage />,
       },
       {
         path: '404',
