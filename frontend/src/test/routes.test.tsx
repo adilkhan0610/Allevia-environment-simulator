@@ -31,8 +31,8 @@ describe('Routing & Page Navigation', () => {
       render(<RouterProvider router={router} />)
     })
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/ALLEVIA/i)
-    expect(screen.getByRole('button', { name: /Enter Interactive Lab/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/YOUR ENVIRONMENT/i)
+    expect(screen.getAllByRole('button', { name: /START SIMULATION/i }).length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders LabPage on route "/lab"', async () => {
