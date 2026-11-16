@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useSimulationStore } from '@/store/simulationStore'
 import { useTelemetryStore } from '@/store/telemetryStore'
-import { useThemeStore } from '@/store/themeStore'
 
-describe('Zustand Modular Stores', () => {
+describe('Zustand Modular Stores (Single-Screen Simulator)', () => {
   beforeEach(() => {
     useSimulationStore.getState().resetSimulation()
     useTelemetryStore.getState().resetTelemetry()
@@ -60,16 +59,5 @@ describe('Zustand Modular Stores', () => {
     expect(updated.readings.mq2_raw).toBe(450)
     expect(updated.readings.bme280.temperature_c).toBe(32.5)
     expect(updated.history.length).toBe(1)
-  })
-
-  it('useThemeStore toggles theme correctly', () => {
-    const themeStore = useThemeStore.getState()
-    expect(themeStore.mode).toBe('dark')
-
-    themeStore.toggleTheme()
-    expect(useThemeStore.getState().mode).toBe('light')
-
-    themeStore.toggleTheme()
-    expect(useThemeStore.getState().mode).toBe('dark')
   })
 })

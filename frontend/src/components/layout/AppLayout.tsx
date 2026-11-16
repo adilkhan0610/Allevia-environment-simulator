@@ -1,11 +1,10 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
-import { AppShell } from './AppShell'
 
 export const AppLayout: React.FC = () => {
   return (
-    <AppShell>
+    <div className="h-screen w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       <Outlet />
-    </AppShell>
+    </div>
   )
 }

@@ -1,62 +1,54 @@
 import { create } from 'zustand'
 
-export type ThemeMode = 'dark' | 'light'
+export type Theme = 'light' | 'dark'
 
 interface ThemeState {
-  mode: ThemeMode
-  neonGlowEnabled: boolean
+  theme: Theme
   toggleTheme: () => void
-  setTheme: (mode: ThemeMode) => void
-  setNeonGlowEnabled: (enabled: boolean) => void
+  setTheme: (t: Theme) => void
 }
 
-const STORAGE_KEY = 'allevia-theme-mode'
-
-const getInitialTheme = (): ThemeMode => {
-  if (typeof window === 'undefined') return 'dark'
-
-  const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null
-  if (stored === 'dark' || stored === 'light') {
-    return stored
+const getInitialTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'light'
+  try {
+    const saved = localStorage.getItem('allevia_sim_theme')
+    if (saved === 'dark' || saved === 'light') return saved
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+  } catch {
+    // Graceful fallback if localStorage or matchMedia is restricted
   }
-
-  // System preference detection fallback
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-    return 'light'
-  }
-
-  return 'dark'
+  return 'light'
 }
 
-const applyThemeToDOM = (mode: ThemeMode) => {
+const applyThemeToDOM = (theme: Theme) => {
   if (typeof document === 'undefined') return
   const root = document.documentElement
-  root.classList.remove('dark', 'light')
-  root.classList.add(mode)
-  root.setAttribute('data-theme', mode)
+  if (theme === 'dark') {
+    root.classList.add('dark')
+  } else {
+    root.classList.remove('dark')
+  }
+  try {
+    localStorage.setItem('allevia_sim_theme', theme)
+  } catch {
+    // localStorage restricted
+  }
 }
 
-// Apply on initial script evaluation
-const initialMode = getInitialTheme()
-applyThemeToDOM(initialMode)
+const initialTheme = getInitialTheme()
+applyThemeToDOM(initialTheme)
 
-export const useThemeStore = create<ThemeState>((set) => ({
-  mode: initialMode,
-  neonGlowEnabled: true,
+export const useThemeStore = create<ThemeState>((set, get) => ({
+  theme: initialTheme,
 
-  toggleTheme: () =>
-    set((state) => {
-      const newMode = state.mode === 'dark' ? 'light' : 'dark'
-      localStorage.setItem(STORAGE_KEY, newMode)
-      applyThemeToDOM(newMode)
-      return { mode: newMode }
-    }),
-
-  setTheme: (mode) => {
-    localStorage.setItem(STORAGE_KEY, mode)
-    applyThemeToDOM(mode)
-    set({ mode })
+  toggleTheme: () => {
+    const nextTheme: Theme = get().theme === 'dark' ? 'light' : 'dark'
+    applyThemeToDOM(nextTheme)
+    set({ theme: nextTheme })
   },
 
-  setNeonGlowEnabled: (neonGlowEnabled) => set({ neonGlowEnabled }),
+  setTheme: (theme) => {
+    applyThemeToDOM(theme)
+    set({ theme })
+  },
 }))

@@ -1,4 +1,4 @@
-# ALLEVIA Environment Simulator
+# Allevia Sim — Judging Simulator
 ### Standalone Interactive 3D Digital Twin & Sensor Telemetry Simulator
 
 The **ALLEVIA Environment Simulator** is a standalone, web-based, high-fidelity interactive 3D hardware simulator for the physical **ALLEVIA Detector Box**, built for the ALLEVIA Population and Workforce Health Early Warning System.

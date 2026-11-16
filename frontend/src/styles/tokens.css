@@ -1,131 +1,59 @@
 /**
- * ALLEVIA DESIGN SYSTEM - CORE TOKENS
- * Philosophy: Apple Hardware × Futuristic Engineering Lab × ALLEVIA Identity
+ * Apple-style minimal tokens for judging simulator
+ * Supports seamless Light and Dark modes
  */
 
-:root,
-.dark {
-  /* Dark Theme Palette */
-  --background: #050607;
-  --surface: #101316;
-  --surface-elevated: #181D21;
-  --surface-glass: rgba(255, 255, 255, 0.05);
-
-  --foreground: #F5F7F8;
-  --foreground-secondary: #929DA5;
-  --foreground-muted: #68747C;
-
-  --accent: #00DDF5;
-  --accent-hover: #55E9FA;
-  --accent-muted: rgba(0, 221, 245, 0.12);
-  --accent-glow: rgba(0, 221, 245, 0.25);
-
-  --border: #28343A;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-
-  /* Status Colors */
-  --status-green: #10B981;
-  --status-green-bg: rgba(16, 185, 129, 0.12);
-  --status-yellow: #F59E0B;
-  --status-yellow-bg: rgba(245, 158, 11, 0.12);
-  --status-orange: #F97316;
-  --status-orange-bg: rgba(249, 115, 22, 0.12);
-  --status-red: #EF4444;
-  --status-red-bg: rgba(239, 68, 68, 0.12);
-  --status-fault: #68747C;
-  --status-fault-bg: rgba(104, 116, 124, 0.15);
-
-  /* Glass Inner Highlights & Shadows */
-  --glass-highlight: rgba(255, 255, 255, 0.07);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-
-  /* Focus Ring */
-  --focus-ring: rgba(0, 221, 245, 0.5);
-}
-
-.light {
-  /* Light Theme Palette */
-  --background: #F3F6F7;
-  --surface: #FFFFFF;
-  --surface-elevated: #E9EFF2;
-  --surface-glass: rgba(255, 255, 255, 0.72);
-
-  --foreground: #10171B;
-  --foreground-secondary: #53616A;
-  --foreground-muted: #84919A;
-
-  --accent: #008DA8;
-  --accent-hover: #00758C;
-  --accent-muted: rgba(0, 141, 168, 0.10);
-  --accent-glow: rgba(0, 141, 168, 0.20);
-
-  --border: #D8E0E4;
-  --border-subtle: rgba(16, 23, 27, 0.08);
-
-  /* Status Colors (Light Mode Accessible) */
-  --status-green: #059669;
-  --status-green-bg: rgba(5, 150, 105, 0.12);
-  --status-yellow: #D97706;
-  --status-yellow-bg: rgba(217, 119, 6, 0.12);
-  --status-orange: #EA580C;
-  --status-orange-bg: rgba(234, 88, 12, 0.12);
-  --status-red: #DC2626;
-  --status-red-bg: rgba(220, 38, 38, 0.12);
-  --status-fault: #53616A;
-  --status-fault-bg: rgba(83, 97, 106, 0.15);
-
-  /* Glass Inner Highlights & Shadows */
-  --glass-highlight: rgba(255, 255, 255, 0.9);
-  --glass-shadow: 0 8px 24px 0 rgba(16, 23, 27, 0.06);
-
-  /* Focus Ring */
-  --focus-ring: rgba(0, 141, 168, 0.5);
-}
-
 :root {
-  /* Typography Families */
-  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --background: #FBFBFD;
+  --surface: #FFFFFF;
+  --surface-hover: #F5F5F7;
+  --surface-card: #FBFBFD;
+  
+  --foreground: #1D1D1F;
+  --secondary: #6E6E73;
+  --muted: #86868B;
+  
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  
+  --accent: #1D1D1F;
+  --accent-foreground: #FFFFFF;
 
-  /* 8px Spacing Scale */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-  --space-20: 80px;
+  --slider-track: #E5E5EA;
+  --slider-thumb: #FFFFFF;
+  --slider-thumb-border: rgba(0, 0, 0, 0.14);
 
-  /* Border Radii (Generous 16px to 28px corners) */
-  --radius-xs: 4px;
+  --font-ui: -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --radius-pill: 9999px;
+  --radius-panel: 16px;
   --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --radius-full: 9999px;
 
-  /* Animation Durations */
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 400ms;
-  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --transition-default: 150ms ease;
+}
 
-  /* Layout Widths */
-  --layout-narrow: 768px;
-  --layout-standard: 1200px;
-  --layout-wide: 1560px;
+:root.dark,
+html.dark {
+  --background: #000000;
+  --surface: #1C1C1E;
+  --surface-hover: #2C2C2E;
+  --surface-card: #151517;
+  
+  --foreground: #F5F5F7;
+  --secondary: #A1A1A6;
+  --muted: #6E6E73;
+  
+  --border: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  
+  --accent: #FFFFFF;
+  --accent-foreground: #000000;
 
-  /* Z-Index Hierarchy */
-  --z-base: 0;
-  --z-elevated: 10;
-  --z-overlay: 20;
-  --z-sticky: 30;
-  --z-modal: 50;
-  --z-toast: 100;
+  --slider-track: #38383A;
+  --slider-thumb: #F5F5F7;
+  --slider-thumb-border: rgba(255, 255, 255, 0.25);
+
+  --shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.4);
 }

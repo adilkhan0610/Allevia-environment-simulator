@@ -1,10 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { IntroPage } from '@/pages/IntroPage'
-import { LabPage } from '@/pages/LabPage'
-import { AboutPage } from '@/pages/AboutPage'
-import { NotFoundPage } from '@/pages/NotFoundPage'
-import { DesignSystemPreviewPage } from '@/pages/DesignSystemPreviewPage'
+import { SimulatorPage } from '@/pages/SimulatorPage'
 
 export const router = createBrowserRouter([
   {
@@ -13,27 +9,11 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <IntroPage />,
-      },
-      {
-        path: 'lab',
-        element: <LabPage />,
-      },
-      {
-        path: 'about',
-        element: <AboutPage />,
-      },
-      {
-        path: 'design-system',
-        element: <DesignSystemPreviewPage />,
-      },
-      {
-        path: '404',
-        element: <NotFoundPage />,
+        element: <SimulatorPage />,
       },
       {
         path: '*',
-        element: <Navigate to="/404" replace />,
+        element: <Navigate to="/" replace />,
       },
     ],
   },
