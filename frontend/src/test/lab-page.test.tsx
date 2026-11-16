@@ -82,8 +82,8 @@ describe('Interactive Simulation Lab (Phase 6)', () => {
     await act(async () => {
       render(<LabPage />)
     })
-    expect(screen.getByText(/Normal Day/i)).toBeInTheDocument()
-    expect(screen.getByText(/Midday Heatwave/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Normal Day/i).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText(/Midday Heatwave/i).length).toBeGreaterThanOrEqual(1)
   })
 
   it('updates live sensor cards when telemetry packet arrives from WebSocket', async () => {

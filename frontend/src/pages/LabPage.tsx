@@ -13,6 +13,11 @@ import { DetectorBoxLazy } from '@/three/DetectorBoxLazy'
 import { LiveSparklineChart } from '@/components/lab/LiveCharts'
 import { SensorFaultControl } from '@/components/lab/SensorFaultControl'
 import { TelemetryInspector } from '@/components/lab/TelemetryInspector'
+import { GuidedWalkthrough } from '@/components/lab/GuidedWalkthrough'
+import { JudgePresentationModal } from '@/components/lab/JudgePresentationModal'
+import { ScenarioComparison } from '@/components/lab/ScenarioComparison'
+import { SimulationReportExport } from '@/components/lab/SimulationReportExport'
+import { RecordedSimulationPlayback } from '@/components/lab/RecordedSimulationPlayback'
 import {
   Activity,
   AlertOctagon,
@@ -27,6 +32,7 @@ import {
   Sliders,
   Square,
   Thermometer,
+  Tv,
   Wind,
   Zap,
 } from 'lucide-react'
@@ -65,6 +71,8 @@ export const LabPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false)
   const [activeFaults, setActiveFaults] = useState<Record<string, string | null>>({})
+  const [isPresentationMode, setIsPresentationMode] = useState(false)
+  const [isPlaybackMode, setIsPlaybackMode] = useState(false)
 
   // Connect WebSocket to backend session stream
   useWebSocket(sessionId)
@@ -291,6 +299,16 @@ export const LabPage: React.FC = () => {
               Reset
             </SecondaryButton>
 
+            {/* Presentation Mode Toggle */}
+            <SecondaryButton
+              size="sm"
+              onClick={() => setIsPresentationMode(true)}
+              className="bg-cyan-500/10 text-[var(--accent-primary)] border-cyan-500/30 hover:bg-cyan-500/20"
+            >
+              <Tv className="w-3.5 h-3.5 mr-1.5" />
+              Judge Presentation Mode
+            </SecondaryButton>
+
             {sessionId && (
               <SecondaryButton size="sm" onClick={handleStopSession} className="text-red-400 hover:text-red-300">
                 <Square className="w-3.5 h-3.5 mr-1.5" />
@@ -346,6 +364,22 @@ export const LabPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
           {/* Left Column: 3D Twin (Desktop 7 cols) */}
           <div className="lg:col-span-7 flex flex-col gap-6">
+            {/* Guided Walkthrough Progression Card */}
+            <GuidedWalkthrough
+              scenarioId={selectedScenarioId}
+              simTimeSec={simTimeSec}
+              onJumpToTime={(t) => console.log('Jumped to timeline:', t)}
+            />
+
+            {/* Offline Recorded Playback Banner (if enabled) */}
+            {isPlaybackMode && (
+              <RecordedSimulationPlayback
+                recordedPackets={history}
+                onPacketEmit={(pkt) => useTelemetryStore.getState().addTelemetryPacket(pkt)}
+                onExitPlayback={() => setIsPlaybackMode(false)}
+              />
+            )}
+
             <GlassPanel className="p-4 rounded-xl border border-[var(--border-subtle)] flex flex-col h-[520px]">
               <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]/50">
                 <div className="flex items-center gap-2">
@@ -434,6 +468,17 @@ export const LabPage: React.FC = () => {
               activeFaults={activeFaults}
               onInjectFault={handleInjectFault}
               onClearAllFaults={handleClearAllFaults}
+            />
+
+            {/* Scenario Comparative Benchmarks */}
+            <ScenarioComparison onSelectScenario={handleSelectScenario} />
+
+            {/* Run Report & Data Export */}
+            <SimulationReportExport
+              sessionId={sessionId}
+              scenarioId={selectedScenarioId}
+              simTimeSec={simTimeSec}
+              history={history}
             />
 
             {/* Raw Telemetry JSON Inspector */}
@@ -634,6 +679,23 @@ export const LabPage: React.FC = () => {
           </div>
         </div>
       </PageContainer>
+
+      {/* Judge Fullscreen Presentation Overlay */}
+      {isPresentationMode && (
+        <JudgePresentationModal
+          scenarioName={
+            scenarios.find((s) => s.id === selectedScenarioId || s.slug === selectedScenarioId)?.name ||
+            'Custom Scenario'
+          }
+          simTimeSec={simTimeSec}
+          status={status}
+          latestPacket={latestPacket}
+          onPlay={status === 'PAUSED' ? handleResumeSession : handleStartSession}
+          onPause={handlePauseSession}
+          onReset={handleResetSession}
+          onExit={() => setIsPresentationMode(false)}
+        />
+      )}
     </div>
   )
 }
