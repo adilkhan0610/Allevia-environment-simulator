@@ -1,0 +1,51 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+build/
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# Docker
+.docker/
+
+# Generated files
+coverage/
