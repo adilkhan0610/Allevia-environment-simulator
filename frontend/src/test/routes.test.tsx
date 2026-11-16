@@ -41,9 +41,9 @@ describe('Routing & Page Navigation', () => {
       render(<RouterProvider router={router} />)
     })
 
-    expect(screen.getByText(/Interactive Simulation Lab/i)).toBeInTheDocument()
-    expect(screen.getByText(/Scenario Selector/i)).toBeInTheDocument()
-    expect(screen.getByText(/Device State/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Simulation Laboratory/i)
+    expect(screen.getByText(/Detector Box Digital Twin/i)).toBeInTheDocument()
+    expect(screen.getByText(/Environmental Scenarios/i)).toBeInTheDocument()
   })
 
   it('renders AboutPage on route "/about"', async () => {

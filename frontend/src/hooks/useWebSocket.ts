@@ -8,6 +8,8 @@ export function useWebSocket(sessionId: string | null) {
   const setConnectionStatus = useTelemetryStore((s) => s.setConnectionStatus)
   const addTelemetryPacket = useTelemetryStore((s) => s.addTelemetryPacket)
   const setSimulatedTier = useSimulationStore((s) => s.setSimulatedTier)
+  const setSimTimeSec = useSimulationStore((s) => s.setSimTimeSec)
+  const setStatus = useSimulationStore((s) => s.setStatus)
 
   useEffect(() => {
     if (!sessionId) {
@@ -28,6 +30,17 @@ export function useWebSocket(sessionId: string | null) {
           if (packet.simulated_tier) {
             setSimulatedTier(packet.simulated_tier)
           }
+          if (typeof packet.sim_time_sec === 'number') {
+            setSimTimeSec(packet.sim_time_sec)
+          }
+        } else if (msg.event_type === 'STATE_UPDATE' && msg.payload) {
+          const payload = msg.payload as Record<string, unknown>
+          if (typeof payload.status === 'string') {
+            setStatus(payload.status as any)
+          }
+          if (typeof payload.sim_time_sec === 'number') {
+            setSimTimeSec(payload.sim_time_sec)
+          }
         }
       }
     })
@@ -39,5 +52,5 @@ export function useWebSocket(sessionId: string | null) {
       unsubscribeMessage()
       wsSimulationClient.disconnect()
     }
-  }, [sessionId, setConnectionStatus, addTelemetryPacket, setSimulatedTier])
+  }, [sessionId, setConnectionStatus, addTelemetryPacket, setSimulatedTier, setSimTimeSec, setStatus])
 }

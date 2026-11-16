@@ -104,6 +104,8 @@ export class WebSocketSimulationClient {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       const payload = typeof data === 'string' ? data : JSON.stringify(data)
       this.socket.send(payload)
+    } else {
+      console.warn('Cannot send message: WebSocket is not open.')
     }
   }
 

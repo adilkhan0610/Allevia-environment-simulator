@@ -67,6 +67,28 @@ class ApiClient {
       method: 'DELETE',
     })
   }
+
+  async controlEngine(
+    sessionId: string,
+    payload: {
+      action: string
+      speed_multiplier?: number
+      intensity_multiplier?: number
+      scenario_id?: string
+      sensor_name?: string
+      fault_type?: string | null
+      dt?: number
+    }
+  ): Promise<{ action: string; session_id: string; engine_state?: unknown }> {
+    return this.request(`/api/v1/sessions/${sessionId}/engine/control`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }
+
+  async getEngineHistory(sessionId: string, limit = 50): Promise<unknown[]> {
+    return this.request(`/api/v1/sessions/${sessionId}/engine/history?limit=${limit}`)
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL)
