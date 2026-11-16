@@ -1,0 +1,12 @@
+{
+  "id": "scenario-05",
+  "slug": "gas-leak",
+  "name": "Gas Leak (Simulated Demo)",
+  "category": "Toxic Gas Hazard",
+  "description": "Simulated industrial demonstration of dangerous carbon monoxide accumulation (MQ-7 ADC >800) and flammable gas leakage (MQ-2 ADC >700) triggering immediate emergency red alerts.",
+  "duration_seconds": 300,
+  "primary_threat": "Carbon Monoxide Poisoning & Explosion Hazard",
+  "target_sensors": ["mq7", "mq2"],
+  "risk_level_expected": "CRITICAL",
+  "expected_tier": "RED"
+}

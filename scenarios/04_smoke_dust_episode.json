@@ -1,0 +1,12 @@
+{
+  "id": "scenario-04",
+  "slug": "smoke-dust-episode",
+  "name": "Smoke/Dust Episode",
+  "category": "Air Quality",
+  "description": "Rapid spike in airborne smoke and particulate matter triggering steep MQ-2 and MQ-135 analog ADC increases, with intermittent IR optical beam occlusion.",
+  "duration_seconds": 300,
+  "primary_threat": "Smoke Inhalation & Particulate Occlusion",
+  "target_sensors": ["mq2", "mq135", "ir"],
+  "risk_level_expected": "HIGH",
+  "expected_tier": "ORANGE"
+}

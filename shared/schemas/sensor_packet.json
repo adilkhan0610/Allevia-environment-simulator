@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlleviaProvisionalSensorPacketSchema",
+  "description": "PROVISIONAL SIMULATOR CONTRACT - Hardware telemetry transmission packet format.",
+  "type": "object",
+  "required": [
+    "packet_id",
+    "device_id",
+    "sequence_number",
+    "timestamp",
+    "source",
+    "readings"
+  ],
+  "properties": {
+    "packet_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_id": {
+      "type": "string",
+      "example": "ALLEVIA-SIM-001"
+    },
+    "sequence_number": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "const": "simulated"
+    },
+    "readings": {
+      "$ref": "./sensor_readings.json"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "session_id": { "type": "string" },
+        "scenario_id": { "type": "string" },
+        "sim_time_sec": { "type": "number" }
+      }
+    }
+  }
+}

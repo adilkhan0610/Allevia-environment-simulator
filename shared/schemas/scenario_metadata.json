@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlleviaProvisionalScenarioMetadataSchema",
+  "description": "PROVISIONAL SIMULATOR CONTRACT - Scenario metadata specification.",
+  "type": "object",
+  "required": [
+    "id",
+    "slug",
+    "name",
+    "category",
+    "description",
+    "duration_seconds",
+    "primary_threat",
+    "target_sensors",
+    "risk_level_expected"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "slug": { "type": "string" },
+    "name": { "type": "string" },
+    "category": { "type": "string" },
+    "description": { "type": "string" },
+    "duration_seconds": { "type": "integer" },
+    "primary_threat": { "type": "string" },
+    "target_sensors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risk_level_expected": {
+      "type": "string",
+      "enum": ["LOW", "MODERATE", "HIGH", "CRITICAL", "SYSTEM_FAULT"]
+    }
+  }
+}

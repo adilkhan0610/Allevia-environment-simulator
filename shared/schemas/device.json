@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlleviaProvisionalDeviceSchema",
+  "description": "PROVISIONAL SIMULATOR CONTRACT - Subject to physical firmware validation in Phase 10.",
+  "type": "object",
+  "required": [
+    "device_id",
+    "device_type",
+    "firmware_version",
+    "hardware_revision",
+    "microcontroller",
+    "source",
+    "registered_at"
+  ],
+  "properties": {
+    "device_id": {
+      "type": "string",
+      "example": "ALLEVIA-SIM-001"
+    },
+    "device_type": {
+      "type": "string",
+      "enum": ["DETECTOR_BOX"]
+    },
+    "firmware_version": {
+      "type": "string",
+      "example": "sim-1.0.0"
+    },
+    "hardware_revision": {
+      "type": "string",
+      "example": "Rev3-Standard"
+    },
+    "microcontroller": {
+      "type": "string",
+      "enum": ["ATmega328P"]
+    },
+    "source": {
+      "type": "string",
+      "const": "simulated"
+    },
+    "registered_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

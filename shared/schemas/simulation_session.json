@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlleviaProvisionalSimulationSessionSchema",
+  "description": "PROVISIONAL SIMULATOR CONTRACT - Ephemeral simulation session lifecycle representation.",
+  "type": "object",
+  "required": [
+    "session_id",
+    "device_id",
+    "created_at",
+    "expires_at",
+    "status",
+    "source",
+    "selected_scenario",
+    "speed_multiplier",
+    "intensity_multiplier"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "device_id": {
+      "type": "string",
+      "example": "ALLEVIA-SIM-001"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["IDLE", "RUNNING", "PAUSED", "TERMINATED"]
+    },
+    "source": {
+      "type": "string",
+      "const": "simulated"
+    },
+    "selected_scenario": {
+      "type": "string",
+      "example": "normal_day"
+    },
+    "speed_multiplier": {
+      "type": "number",
+      "minimum": 0.25,
+      "maximum": 5.0,
+      "default": 1.0
+    },
+    "intensity_multiplier": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 2.0,
+      "default": 1.0
+    }
+  }
+}

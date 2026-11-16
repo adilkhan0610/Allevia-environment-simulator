@@ -1,0 +1,68 @@
+import { describe, it, expect } from 'vitest'
+import { render, screen, act } from '@testing-library/react'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { IntroPage } from '@/pages/IntroPage'
+import { LabPage } from '@/pages/LabPage'
+import { AboutPage } from '@/pages/AboutPage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
+
+const createTestRouter = (initialEntry: string) =>
+  createMemoryRouter(
+    [
+      {
+        path: '/',
+        element: <AppLayout />,
+        children: [
+          { index: true, element: <IntroPage /> },
+          { path: 'lab', element: <LabPage /> },
+          { path: 'about', element: <AboutPage /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
+    ],
+    { initialEntries: [initialEntry] }
+  )
+
+describe('Routing & Page Navigation', () => {
+  it('renders IntroPage on route "/"', async () => {
+    const router = createTestRouter('/')
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+    })
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/ALLEVIA/i)
+    expect(screen.getByRole('link', { name: /Enter Interactive Lab/i })).toBeInTheDocument()
+  })
+
+  it('renders LabPage on route "/lab"', async () => {
+    const router = createTestRouter('/lab')
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+    })
+
+    expect(screen.getByText(/Interactive Simulation Lab/i)).toBeInTheDocument()
+    expect(screen.getByText(/Scenario Selector/i)).toBeInTheDocument()
+    expect(screen.getByText(/Virtual 3D Detector Box/i)).toBeInTheDocument()
+  })
+
+  it('renders AboutPage on route "/about"', async () => {
+    const router = createTestRouter('/about')
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+    })
+
+    expect(screen.getByText(/ALLEVIA Detector Box Architecture/i)).toBeInTheDocument()
+    expect(screen.getByText(/Arduino Uno Rev3/i)).toBeInTheDocument()
+    expect(screen.getByText(/BME280/i)).toBeInTheDocument()
+  })
+
+  it('renders NotFoundPage on unknown route', async () => {
+    const router = createTestRouter('/some-nonexistent-route')
+    await act(async () => {
+      render(<RouterProvider router={router} />)
+    })
+
+    expect(screen.getByText(/404 — ROUTE NOT FOUND/i)).toBeInTheDocument()
+  })
+})

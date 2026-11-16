@@ -1,0 +1,12 @@
+{
+  "id": "scenario-02",
+  "slug": "midday-heatwave",
+  "name": "Midday Heatwave",
+  "category": "Thermal Stress",
+  "description": "Rapid escalation in ambient temperature up to 43.5°C accompanied by dry air (humidity dropping to 20%), triggering heat strain tier transitions.",
+  "duration_seconds": 300,
+  "primary_threat": "Extreme Ambient Heat Strain",
+  "target_sensors": ["bme280"],
+  "risk_level_expected": "HIGH",
+  "expected_tier": "ORANGE"
+}

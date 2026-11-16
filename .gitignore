@@ -49,3 +49,5 @@ htmlcov/
 
 # Generated files
 coverage/
+# TypeScript build info
+*.tsbuildinfo

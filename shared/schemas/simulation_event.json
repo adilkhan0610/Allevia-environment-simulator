@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlleviaProvisionalSimulationEventSchema",
+  "description": "PROVISIONAL SIMULATOR CONTRACT - Real-time WebSocket event frames.",
+  "type": "object",
+  "required": [
+    "event_type",
+    "session_id",
+    "timestamp",
+    "payload"
+  ],
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "TELEMETRY_PACKET",
+        "TIER_TRANSITION",
+        "FAULT_TRIGGERED",
+        "FAULT_CLEARED",
+        "STATE_CHANGED",
+        "HEARTBEAT"
+      ]
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

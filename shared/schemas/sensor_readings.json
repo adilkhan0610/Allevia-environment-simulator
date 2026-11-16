@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AlleviaProvisionalSensorReadingsSchema",
+  "description": "PROVISIONAL SIMULATOR CONTRACT - Maps directly to physical Detector Box sensor channels.",
+  "type": "object",
+  "required": [
+    "temperature_c",
+    "humidity_pct",
+    "pressure_hpa",
+    "mq2_adc",
+    "mq7_adc",
+    "mq135_adc",
+    "ir_triggered",
+    "battery_voltage_v"
+  ],
+  "properties": {
+    "temperature_c": {
+      "type": "number",
+      "description": "Ambient temperature from BME280 sensor in Celsius.",
+      "minimum": -40.0,
+      "maximum": 85.0
+    },
+    "humidity_pct": {
+      "type": "number",
+      "description": "Relative humidity from BME280 sensor percentage.",
+      "minimum": 0.0,
+      "maximum": 100.0
+    },
+    "pressure_hpa": {
+      "type": "number",
+      "description": "Atmospheric pressure from BME280 sensor in hectopascals.",
+      "minimum": 300.0,
+      "maximum": 1100.0
+    },
+    "mq2_adc": {
+      "type": "integer",
+      "description": "10-bit raw ADC reading from MQ2 gas/smoke sensor (Pin A0).",
+      "minimum": 0,
+      "maximum": 1023
+    },
+    "mq7_adc": {
+      "type": "integer",
+      "description": "10-bit raw ADC reading from MQ7 CO sensor (Pin A1).",
+      "minimum": 0,
+      "maximum": 1023
+    },
+    "mq135_adc": {
+      "type": "integer",
+      "description": "10-bit raw ADC reading from MQ135 air quality sensor (Pin A2).",
+      "minimum": 0,
+      "maximum": 1023
+    },
+    "ir_triggered": {
+      "type": "integer",
+      "description": "Digital state from optical obstacle / beam break sensor (Pin D2). 0=Clear, 1=Triggered.",
+      "enum": [0, 1]
+    },
+    "battery_voltage_v": {
+      "type": "number",
+      "description": "System rail voltage reading (Nominal 5.0V / USB regulated).",
+      "minimum": 0.0,
+      "maximum": 5.5
+    }
+  }
+}

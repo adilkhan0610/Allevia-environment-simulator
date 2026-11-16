@@ -1,0 +1,12 @@
+{
+  "id": "scenario-06",
+  "slug": "sensor-fault",
+  "name": "Sensor Fault",
+  "category": "Diagnostics",
+  "description": "Simulated hardware fault conditions: BME280 I2C bus lockup causing sensor null dropouts, MQ-7 ground pull-up railing to 1023, and erratic ADC step anomalies.",
+  "duration_seconds": 300,
+  "primary_threat": "Hardware Sensor Malfunction & Unreliable Telemetry",
+  "target_sensors": ["bme280", "mq7", "ir"],
+  "risk_level_expected": "SYSTEM_FAULT",
+  "expected_tier": "FAULT"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "scenario-01",
+  "slug": "normal-day",
+  "name": "Normal Day",
+  "category": "Baseline",
+  "description": "Baseline workplace environment with gentle diurnal temperature and humidity fluctuations. All air quality metrics remain in clean safe bands.",
+  "duration_seconds": 300,
+  "primary_threat": "None (Nominal Baseline)",
+  "target_sensors": ["bme280", "mq2", "mq7", "mq135"],
+  "risk_level_expected": "LOW",
+  "expected_tier": "GREEN"
+}

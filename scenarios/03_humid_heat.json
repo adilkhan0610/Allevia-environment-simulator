@@ -1,0 +1,12 @@
+{
+  "id": "scenario-03",
+  "slug": "humid-heat",
+  "name": "Humid Heat",
+  "category": "Thermal Stress",
+  "description": "Hazardous combined high temperature (35°C) and saturated relative humidity (92%), generating severe heat index stress due to inhibited evaporative cooling.",
+  "duration_seconds": 300,
+  "primary_threat": "Extreme Wet-Bulb Environmental Stress",
+  "target_sensors": ["bme280"],
+  "risk_level_expected": "CRITICAL",
+  "expected_tier": "RED"
+}
