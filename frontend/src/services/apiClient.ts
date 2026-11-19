@@ -89,6 +89,13 @@ class ApiClient {
   async getEngineHistory(sessionId: string, limit = 50): Promise<unknown[]> {
     return this.request(`/api/v1/sessions/${sessionId}/engine/history?limit=${limit}`)
   }
+
+  async setIntegrationNode(node: number): Promise<unknown> {
+    return this.request('/api/v1/integration/target-node', {
+      method: 'POST',
+      body: JSON.stringify({ node }),
+    })
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL)

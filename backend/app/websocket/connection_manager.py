@@ -3,6 +3,7 @@ import logging
 from typing import Dict, List, Optional
 from fastapi import WebSocket
 from app.schemas.telemetry import TelemetryPacket
+from app.services.integration_service import integration_service
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,10 @@ class ConnectionManager:
                             "payload": packet.model_dump(mode="json"),
                         }
                         await self.send_json(session_id, event_data)
+
+                        # Forward to Population backend if LIVE_BRIDGE mode is active
+                        if integration_service.enabled and integration_service.mode == "LIVE_BRIDGE":
+                            asyncio.create_task(integration_service.forward_telemetry(packet))
 
                     # Dynamic sleep adjusted for real-time responsiveness (default 1.0s / 10Hz if speed is high)
                     await asyncio.sleep(interval_sec)

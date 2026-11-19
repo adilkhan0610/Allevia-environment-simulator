@@ -963,7 +963,11 @@ export const HardwareModel: React.FC = () => {
 
       // Animate Gas particle positions
       const gasPos = gasGeo.attributes.position.array as Float32Array
-      const gasSpeedMul = isRunning ? 1.0 + (currentTemp - 20) * 0.03 : 0.25
+      const airSpeedActive = useSimulatorStore.getState().params.airSpeed
+      const batteryState = useSimulatorStore.getState().params.battery
+      const airSpeedFactor = airSpeedActive ? 2.4 : 1.0
+
+      const gasSpeedMul = (isRunning ? 1.0 + (currentTemp - 20) * 0.03 : 0.25) * airSpeedFactor
       for (let i = 0; i < targetGasCount; i++) {
         gasPos[i * 3 + 2] += 0.007 * gasSpeeds[i] * gasSpeedMul
         if (gasPos[i * 3 + 2] > 2.5) {
@@ -978,7 +982,7 @@ export const HardwareModel: React.FC = () => {
       const targetTempCount = Math.round(6 + (clampedTemp / 60) * 36) // 6 to 42 particles (low density)
       tempGeo.setDrawRange(0, targetTempCount)
       const tempPos = tempGeo.attributes.position.array as Float32Array
-      const tempSpeedMul = isRunning ? 1.2 : 0.35
+      const tempSpeedMul = (isRunning ? 1.2 : 0.35) * airSpeedFactor
       for (let i = 0; i < targetTempCount; i++) {
         tempPos[i * 3 + 1] += 0.008 * tempSpeeds[i] * tempSpeedMul // thermal convection upward
         if (tempPos[i * 3 + 1] > 3.6) {
@@ -994,7 +998,7 @@ export const HardwareModel: React.FC = () => {
       const targetHumCount = Math.round(6 + (clampedHum / 100) * 36) // 6 to 42 particles (low density)
       humGeo.setDrawRange(0, targetHumCount)
       const humPos = humGeo.attributes.position.array as Float32Array
-      const humSpeedMul = isRunning ? 1.0 : 0.3
+      const humSpeedMul = (isRunning ? 1.0 : 0.3) * airSpeedFactor
       for (let i = 0; i < targetHumCount; i++) {
         humPos[i * 3 + 2] += 0.006 * humSpeeds[i] * humSpeedMul
         humPos[i * 3 + 1] += Math.sin(clock * 2 + i) * 0.002
@@ -1016,13 +1020,22 @@ export const HardwareModel: React.FC = () => {
         targetCamPos.lerp(defaultPosition, 0.05)
       }
 
-      // Subtle neutral LED pulse while running
+      // Neutral / Status LED state
       if (ledBar) {
         const ledMat = ledBar.material as THREE.MeshStandardMaterial
-        if (isRunning) {
+        if (batteryState === 'low') {
+          const blink = (Math.sin(clock * 7) + 1) * 0.5
+          ledMat.color.setHex(0xf39c12)
+          ledMat.emissive.setHex(0xd35400)
+          ledMat.emissiveIntensity = 0.4 + blink * 1.6
+        } else if (isRunning) {
           const pulse = (Math.sin(clock * 4) + 1) * 0.5
+          ledMat.color.setHex(0x2ecc71)
+          ledMat.emissive.setHex(0x27ae60)
           ledMat.emissiveIntensity = 0.8 + pulse * 1.0
         } else {
+          ledMat.color.setHex(0xffffff)
+          ledMat.emissive.setHex(0xffffff)
           ledMat.emissiveIntensity = 0.4
         }
       }
@@ -1071,9 +1084,29 @@ export const HardwareModel: React.FC = () => {
   }
 
   const partInfo = selectedPart ? PART_DESCRIPTIONS[selectedPart] : null
+  const selectedNode = useSimulatorStore((s) => s.params.selectedNode)
+  const airSpeed = useSimulatorStore((s) => s.params.airSpeed)
+  const battery = useSimulatorStore((s) => s.params.battery)
+  const zoneLetters = ['A', 'B', 'C', 'D', 'E'] as const
+  const activeZone = zoneLetters[(selectedNode - 1) || 0]
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden bg-[var(--surface)] text-[var(--foreground)] rounded-[16px] border border-[var(--border)] shadow-[var(--shadow-panel)] transition-colors">
+      {/* 3D Model Floating Active Node & Telemetry Pill */}
+      <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--surface)]/90 backdrop-blur-md border border-[var(--border)] shadow-xs text-[11px] font-mono pointer-events-none select-none">
+        <span className="font-sans font-semibold text-[var(--foreground)]">Node {selectedNode}</span>
+        <span className="text-[var(--muted)]">·</span>
+        <span className="text-[var(--secondary)] font-medium">Zone {activeZone}</span>
+        <span className="text-[var(--muted)]">·</span>
+        <span className={airSpeed ? 'text-sky-500 font-medium' : 'text-[var(--muted)]'}>
+          {airSpeed ? 'Wind 4.5m/s' : 'Calm 0.2m/s'}
+        </span>
+        <span className="text-[var(--muted)]">·</span>
+        <span className={battery === 'normal' ? 'text-emerald-500 font-medium' : 'text-rose-500 font-medium animate-pulse'}>
+          {battery === 'normal' ? 'Bat 95%' : 'Bat 14% Low'}
+        </span>
+      </div>
+
       {/* Three.js Canvas Container */}
       <div ref={containerRef} className="flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
 

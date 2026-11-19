@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { APP_NAME } from '@/config/brand'
 import { useSimulatorStore } from '@/store/simulatorStore'
 import { useThemeStore } from '@/store/themeStore'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import { apiClient } from '@/services/apiClient'
 import { ParametersPanel } from '@/components/ParametersPanel'
 import { HardwareModel } from '@/three/HardwareModel'
 import { TransmissionLogPanel } from '@/components/TransmissionLogPanel'
@@ -9,28 +11,28 @@ import { AboutModal } from '@/components/AboutModal'
 
 export const SimulatorPage: React.FC = () => {
   const [aboutOpen, setAboutOpen] = useState(false)
-  const status = useSimulatorStore((s) => s.status)
-  const dirty = useSimulatorStore((s) => s.dirty)
+  const sessionId = null
+  useWebSocket(sessionId)
+
   const start = useSimulatorStore((s) => s.start)
-  const stop = useSimulatorStore((s) => s.stop)
-  const restart = useSimulatorStore((s) => s.restart)
   const reset = useSimulatorStore((s) => s.reset)
 
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
-  const handleAction = () => {
-    if (status === 'running') {
-      stop()
-    } else if (status === 'completed' && !dirty) {
-      restart()
-    } else {
-      start()
+  const handleAction = async () => {
+    // Apply override spike immediately for selected node and restart decay
+    start()
+    if (sessionId) {
+      try {
+        await apiClient.controlEngine(sessionId, { action: 'start' })
+      } catch (e) {
+        // Backend session warning
+      }
     }
   }
 
-  const actionLabel =
-    status === 'running' ? 'Stop' : status === 'completed' && !dirty ? 'Restart' : 'Start'
+  const actionLabel = 'Start / Trigger Spike'
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[var(--background)] text-[var(--foreground)] select-none transition-colors">
