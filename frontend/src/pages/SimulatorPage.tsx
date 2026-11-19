@@ -11,49 +11,28 @@ import { AboutModal } from '@/components/AboutModal'
 
 export const SimulatorPage: React.FC = () => {
   const [aboutOpen, setAboutOpen] = useState(false)
-  const [sessionId, setSessionId] = useState<string | null>(null)
+  const sessionId = null
   useWebSocket(sessionId)
 
-  const status = useSimulatorStore((s) => s.status)
-  const dirty = useSimulatorStore((s) => s.dirty)
   const start = useSimulatorStore((s) => s.start)
-  const stop = useSimulatorStore((s) => s.stop)
-  const restart = useSimulatorStore((s) => s.restart)
   const reset = useSimulatorStore((s) => s.reset)
 
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   const handleAction = async () => {
-    if (status === 'running') {
-      if (sessionId) {
-        try {
-          await apiClient.controlEngine(sessionId, { action: 'stop' })
-          await apiClient.deleteSession(sessionId)
-        } catch (e) {
-          console.warn('Session teardown warning:', e)
-        }
-        setSessionId(null)
-      }
-      stop()
-    } else {
-      if (status === 'completed' && !dirty) {
-        restart()
-      } else {
-        start()
-      }
+    // Apply override spike immediately for selected node and restart decay
+    start()
+    if (sessionId) {
       try {
-        const session = await apiClient.createSession()
-        setSessionId(session.session_id)
-        await apiClient.controlEngine(session.session_id, { action: 'start' })
+        await apiClient.controlEngine(sessionId, { action: 'start' })
       } catch (e) {
-        console.warn('Backend session connect warning:', e)
+        // Backend session warning
       }
     }
   }
 
-  const actionLabel =
-    status === 'running' ? 'Stop' : status === 'completed' && !dirty ? 'Restart' : 'Start'
+  const actionLabel = 'Start / Trigger Spike'
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[var(--background)] text-[var(--foreground)] select-none transition-colors">

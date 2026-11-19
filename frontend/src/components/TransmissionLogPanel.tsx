@@ -1,28 +1,31 @@
-import React, { useEffect, useRef } from 'react'
-import { useSimulatorStore, RUN_SECONDS } from '@/store/simulatorStore'
-import { useTelemetryStore } from '@/store/telemetryStore'
+import React, { useState, useEffect, useRef } from 'react'
+import {
+  useSimulatorStore,
+  NODE_PROFILES,
+} from '@/store/simulatorStore'
+import { SIMULATION_CADENCE_SECONDS, POPULATION_API_BASE } from '@/services/simulationNetwork'
 
 export const TransmissionLogPanel: React.FC = () => {
-  const status = useSimulatorStore((s) => s.status)
-  const secondsElapsed = useSimulatorStore((s) => s.secondsElapsed)
-  const packetCount = useSimulatorStore((s) => s.packetCount)
+  const [activeTab, setActiveTab] = useState<'network' | 'payload' | 'logs'>('network')
+  const [copied, setCopied] = useState(false)
+
+  const countdownSeconds = useSimulatorStore((s) => s.countdownSeconds)
+  const nodeStates = useSimulatorStore((s) => s.nodeStates)
+  const lastSentPayload = useSimulatorStore((s) => s.lastSentPayload)
   const logs = useSimulatorStore((s) => s.logs)
+  const tickSecond = useSimulatorStore((s) => s.tickSecond)
+  const dispatchNetworkCycle = useSimulatorStore((s) => s.dispatchNetworkCycle)
   const params = useSimulatorStore((s) => s.params)
-  const tick = useSimulatorStore((s) => s.tick)
-
-  const latestPacket = useTelemetryStore((s) => s.latestPacket)
-  const connectionStatus = useTelemetryStore((s) => s.connectionStatus)
-
   const logContainerRef = useRef<HTMLDivElement>(null)
+  const currentNode = NODE_PROFILES[params.selectedNode] || NODE_PROFILES[1]
 
-  // Simulation timer loop
+  // Continuous 1-second interval loop powering 60s network cycle and countdown
   useEffect(() => {
-    if (status !== 'running') return
     const timer = setInterval(() => {
-      tick()
+      tickSecond()
     }, 1000)
     return () => clearInterval(timer)
-  }, [status, tick])
+  }, [tickSecond])
 
   // Auto-scroll logs
   useEffect(() => {
@@ -31,112 +34,231 @@ export const TransmissionLogPanel: React.FC = () => {
     }
   }, [logs])
 
-  // Status text mapping
-  const getStatusText = () => {
-    if (connectionStatus === 'CONNECTED') {
-      return 'Live Bridge · Streaming'
-    }
-    switch (status) {
-      case 'running':
-        return 'Sending data...'
-      case 'completed':
-        return 'Data sent successfully'
-      case 'stopped':
-        return 'Stopped'
-      case 'idle':
-      default:
-        return 'Waiting for start'
-    }
+  const handleCopyPayload = () => {
+    if (!lastSentPayload) return
+    navigator.clipboard.writeText(JSON.stringify(lastSentPayload, null, 2))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
-  // Realistic sensor and ADC conversion
-  const hasSmoke = params.gases.includes('smoke')
-  const hasCo = params.gases.includes('co')
-  const hasLpg = params.gases.includes('lpg')
-  const isRunning = status === 'running'
-
-  const jitter = isRunning ? (packetCount % 3) - 1 : 0
-  const mq2Raw = Math.min(1023, Math.max(0, (hasSmoke ? 760 : hasLpg ? 680 : 145) + jitter))
-  const mq7Raw = Math.min(1023, Math.max(0, (hasCo ? 840 : 75) + jitter))
-  const mq135Raw = Math.min(
-    1023,
-    Math.max(0, Math.round(90 + (params.airQuality / 500) * 780) + jitter)
-  )
-
-  const telemetryPacket = {
-    device: 'sim-node-01',
-    seq: packetCount,
-    uptime_sec: secondsElapsed,
-    sensors: {
-      bme280: {
-        temp_c: params.temperature,
-        humidity_pct: params.humidity,
-        pressure_hpa: params.pressure,
-      },
-      mq2_raw: mq2Raw,
-      mq7_raw: mq7Raw,
-      mq135_raw: mq135Raw,
-      ir_raw: params.infrared,
-    },
-    gases_detected: params.gases.length > 0 ? params.gases : ['none'],
-  }
-
-  const progressPercent = Math.min(100, (secondsElapsed / RUN_SECONDS) * 100)
+  const nodesList = Object.values(nodeStates)
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-3.5 sm:p-4 bg-[var(--surface)] text-[var(--foreground)] rounded-[16px] border border-[var(--border)] shadow-[var(--shadow-panel)] overflow-hidden font-mono text-[11px] transition-colors">
-      {/* Top Status & 1px Progress Bar */}
+    <div className="w-full h-full flex flex-col justify-between p-3 sm:p-4 bg-[var(--surface)] text-[var(--foreground)] rounded-[16px] border border-[var(--border)] shadow-[var(--shadow-panel)] overflow-hidden font-mono text-[11px] transition-colors">
+      {/* Top Banner: 60s Countdown + Next Send Bar */}
       <div className="space-y-2 pb-2.5 border-b border-[var(--border-subtle)] shrink-0">
-        <div className="flex items-center justify-between text-[12px] font-sans">
-          <span className="text-[var(--foreground)] font-medium">{getStatusText()}</span>
-          <span className="text-[var(--muted)] font-mono text-[11px]">
-            {status === 'running' || status === 'completed'
-              ? `${secondsElapsed}s / ${RUN_SECONDS}s`
-              : 'Idle'}
-          </span>
+        <div className="flex items-center justify-between font-sans">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[12px] font-semibold text-[var(--foreground)]">
+              Live Sensor Network (N01–N05)
+            </span>
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[11px]">
+            <span className="text-[var(--muted)]">Next send:</span>
+            <span className="px-2 py-0.5 rounded bg-[var(--surface-hover)] text-emerald-400 font-bold border border-[var(--border)]">
+              {countdownSeconds}s
+            </span>
+            <button
+              type="button"
+              onClick={() => dispatchNetworkCycle()}
+              className="px-2 py-0.5 rounded text-[10px] font-sans font-medium bg-[var(--foreground)] text-[var(--background)] hover:opacity-90 active:scale-95 cursor-pointer transition shadow-sm"
+              title="Trigger immediate 60s network transmission for all nodes"
+            >
+              Send Now
+            </button>
+          </div>
         </div>
-        <div className="w-full h-[1px] bg-[var(--border)] overflow-hidden">
+
+        {/* Countdown Progress Bar (60s cycle) */}
+        <div className="w-full h-[2px] bg-[var(--border)] rounded-full overflow-hidden">
           <div
-            className="h-full bg-[var(--foreground)] transition-all duration-300 ease-linear"
-            style={{ width: `${progressPercent}%` }}
+            className="h-full bg-emerald-500 transition-all duration-1000 ease-linear"
+            style={{ width: `${((SIMULATION_CADENCE_SECONDS - countdownSeconds) / SIMULATION_CADENCE_SECONDS) * 100}%` }}
           />
         </div>
-      </div>
 
-      {/* Live JSON Payload Block */}
-      <div className="flex-1 my-2 overflow-hidden flex flex-col min-h-0 bg-[var(--surface-card)] p-2.5 rounded-[8px] border border-[var(--border-subtle)]">
-        <div className="text-[10px] text-[var(--muted)] uppercase tracking-wide mb-1 shrink-0 font-sans">
-          Live Data Packet (JSON)
+        {/* View Tabs */}
+        <div className="flex items-center gap-1 font-sans text-[11px] pt-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('network')}
+            className={`px-2.5 py-1 rounded-[6px] font-medium transition cursor-pointer ${
+              activeTab === 'network'
+                ? 'bg-[var(--surface-hover)] text-[var(--foreground)] border border-[var(--border)]'
+                : 'text-[var(--secondary)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            All Nodes (Current vs Base)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('payload')}
+            className={`px-2.5 py-1 rounded-[6px] font-medium transition cursor-pointer ${
+              activeTab === 'payload'
+                ? 'bg-[var(--surface-hover)] text-[var(--foreground)] border border-[var(--border)]'
+                : 'text-[var(--secondary)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            Last Sent Payload (Schema 1)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('logs')}
+            className={`px-2.5 py-1 rounded-[6px] font-medium transition cursor-pointer ${
+              activeTab === 'logs'
+                ? 'bg-[var(--surface-hover)] text-[var(--foreground)] border border-[var(--border)]'
+                : 'text-[var(--secondary)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            Transmission Logs
+          </button>
         </div>
-        <pre className="flex-1 overflow-y-auto text-[10.5px] leading-tight text-[var(--foreground)] custom-scrollbar select-text">
-          {JSON.stringify(latestPacket || telemetryPacket, null, 2)}
-        </pre>
       </div>
 
-      {/* Arduino C++ Snippet */}
-      <div className="shrink-0 mb-2 p-2 bg-[var(--surface-card)] rounded-[8px] border border-[var(--border-subtle)] text-[10px] leading-tight text-[var(--secondary)] select-text hidden sm:block">
-        <span className="text-[var(--muted)] font-sans block mb-0.5">Arduino Uno — Loop</span>
-        <code>
-          doc[&quot;temp&quot;] = {params.temperature.toFixed(1)}; doc[&quot;rh&quot;] = {Math.round(params.humidity)};<br />
-          doc[&quot;co&quot;] = {mq7Raw}; doc[&quot;smoke&quot;] = {mq2Raw};<br />
-          serializeJson(doc, Serial); Serial.println();
-        </code>
-      </div>
+      {/* Main Content Area based on Tab */}
+      <div className="flex-1 my-2 overflow-hidden flex flex-col min-h-0">
+        {activeTab === 'network' && (
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            {nodesList.map((node) => {
+              const isSelected = node.nodeId === currentNode.nodeId
+              const isSpike = Boolean(node.override)
+              const cur = node.current
+              const base = node.baseline
 
-      {/* Transmission Terminal Log */}
-      <div className="shrink-0 space-y-1">
-        <div className="text-[10px] text-[var(--muted)] uppercase tracking-wide font-sans">
-          Transmission Log
-        </div>
-        <div
-          ref={logContainerRef}
-          className="h-20 sm:h-24 overflow-y-auto p-2 bg-[var(--surface-card)] rounded-[8px] border border-[var(--border-subtle)] space-y-1 text-[10.5px] text-[var(--foreground)] custom-scrollbar select-text"
-        >
-          {logs.map((line, idx) => (
-            <div key={idx} className="leading-tight">
-              {line}
+              return (
+                <div
+                  key={node.nodeId}
+                  className={`p-2 rounded-[8px] border transition-colors ${
+                    isSelected
+                      ? 'bg-[var(--surface-hover)] border-[var(--foreground)]/40 shadow-sm'
+                      : 'bg-[var(--surface-card)] border-[var(--border-subtle)]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5 font-sans">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-[12px] text-[var(--foreground)]">
+                        {node.nodeId}
+                      </span>
+                      <span className="text-[11px] text-[var(--secondary)]">
+                        Zone {node.zone} ({node.zoneName})
+                      </span>
+                      {isSelected && (
+                        <span className="px-1.5 py-0.2 rounded text-[9.5px] bg-sky-500/20 text-sky-400 font-medium">
+                          Selected
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      {isSpike ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse">
+                          Decaying Spike
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                          Normal Base
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Metrics Grid: Current vs Baseline */}
+                  <div className="grid grid-cols-5 gap-1.5 text-[10px] font-mono bg-black/10 dark:bg-black/25 p-1.5 rounded-[6px]">
+                    <div>
+                      <div className="text-[var(--muted)] text-[9px] uppercase">Temp</div>
+                      <div className="font-semibold text-[var(--foreground)]">
+                        {cur.air_c.toFixed(1)}°C
+                      </div>
+                      <div className="text-[9px] text-[var(--muted)]">
+                        base: {base.air_c.toFixed(1)}°
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--muted)] text-[9px] uppercase">RH %</div>
+                      <div className="font-semibold text-[var(--foreground)]">
+                        {Math.round(cur.rh_pct)}%
+                      </div>
+                      <div className="text-[9px] text-[var(--muted)]">
+                        base: {Math.round(base.rh_pct)}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--muted)] text-[9px] uppercase">PM2.5</div>
+                      <div className={`font-semibold ${cur.pm25 >= 150 ? 'text-red-400 font-bold' : cur.pm25 >= 55 ? 'text-amber-400' : 'text-[var(--foreground)]'}`}>
+                        {cur.pm25.toFixed(1)}
+                      </div>
+                      <div className="text-[9px] text-[var(--muted)]">
+                        base: {base.pm25.toFixed(1)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--muted)] text-[9px] uppercase">WBGT</div>
+                      <div className={`font-semibold ${cur.wbgt_c >= 32.2 ? 'text-red-400 font-bold' : cur.wbgt_c >= 28.0 ? 'text-amber-400' : 'text-[var(--foreground)]'}`}>
+                        {cur.wbgt_c.toFixed(1)}°C
+                      </div>
+                      <div className="text-[9px] text-[var(--muted)]">
+                        base: {base.wbgt_c.toFixed(1)}°
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--muted)] text-[9px] uppercase">Battery</div>
+                      <div className="font-semibold text-[var(--foreground)]">
+                        {Math.round(cur.battery_pct)}%
+                      </div>
+                      <div className="text-[9px] text-[var(--muted)]">
+                        {cur.flame_ir_detected ? 'FLAME!' : 'nominal'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {activeTab === 'payload' && (
+          <div className="flex-1 overflow-hidden flex flex-col bg-[var(--surface-card)] p-2.5 rounded-[8px] border border-[var(--border-subtle)]">
+            <div className="flex items-center justify-between text-[10px] text-[var(--muted)] uppercase tracking-wide mb-1 shrink-0 font-sans">
+              <span>Schema 1 Ingest Payload</span>
+              <button
+                type="button"
+                onClick={handleCopyPayload}
+                className="px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--foreground)] border border-[var(--border)] hover:bg-[var(--surface)] transition text-[10px] cursor-pointer"
+              >
+                {copied ? 'Copied!' : 'Copy JSON'}
+              </button>
             </div>
-          ))}
+            <pre className="flex-1 overflow-y-auto text-[10.5px] leading-tight text-[var(--foreground)] custom-scrollbar select-text font-mono">
+              {JSON.stringify(lastSentPayload, null, 2) || '// Waiting for first network transmission cycle...'}
+            </pre>
+            <div className="text-[9.5px] text-[var(--muted)] font-sans pt-1 mt-1 border-t border-[var(--border-subtle)]">
+              Destination: {POPULATION_API_BASE}/api/v1/ingest/readings (Headers: X-Node-Id, X-Device-Key)
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'logs' && (
+          <div
+            ref={logContainerRef}
+            className="flex-1 overflow-y-auto p-2 bg-[var(--surface-card)] rounded-[8px] border border-[var(--border-subtle)] space-y-1 text-[10.5px] text-[var(--foreground)] custom-scrollbar select-text font-mono"
+          >
+            {logs.map((line, idx) => (
+              <div key={idx} className="leading-tight">
+                {line}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer Info: Units and EPA Conversion Documentation */}
+      <div className="shrink-0 p-2 bg-[var(--surface-card)] rounded-[8px] border border-[var(--border-subtle)] text-[10px] leading-tight text-[var(--secondary)] font-sans">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-[var(--foreground)]">Cadence & Conversion Specs:</span>
+          <span className="font-mono text-[9.5px]">60s network interval</span>
+        </div>
+        <div className="text-[9.5px] text-[var(--muted)] mt-0.5">
+          Air Quality slider is in AQI (0–500), converted to PM2.5 (µg/m³) via standard EPA piecewise linear breakpoints before sending. Overridden spikes decay by k ≈ 0.82 (PM/gas) and k ≈ 0.90 (temp) each 60s cycle.
         </div>
       </div>
     </div>

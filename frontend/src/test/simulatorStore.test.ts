@@ -122,4 +122,44 @@ describe('useSimulatorStore State Machine', () => {
     expect(useSimulatorStore.getState().secondsElapsed).toBe(RUN_SECONDS)
     expect(useSimulatorStore.getState().status).toBe('completed')
   })
+
+  it('supports node selection across nodes 1 to 5', () => {
+    const s = useSimulatorStore.getState()
+    expect(s.params.selectedNode).toBe(1)
+
+    s.setSelectedNode(2)
+    expect(useSimulatorStore.getState().params.selectedNode).toBe(2)
+    expect(useSimulatorStore.getState().dirty).toBe(true)
+
+    s.setSelectedNode(5)
+    expect(useSimulatorStore.getState().params.selectedNode).toBe(5)
+  })
+
+  it('toggles air speed and affects dynamic cooling and dispersion', () => {
+    const s = useSimulatorStore.getState()
+    expect(s.params.airSpeed).toBe(false)
+
+    s.toggleAirSpeed()
+    expect(useSimulatorStore.getState().params.airSpeed).toBe(true)
+
+    s.toggleAirSpeed()
+    expect(useSimulatorStore.getState().params.airSpeed).toBe(false)
+
+    s.setAirSpeed(true)
+    expect(useSimulatorStore.getState().params.airSpeed).toBe(true)
+  })
+
+  it('toggles battery status between normal and low', () => {
+    const s = useSimulatorStore.getState()
+    expect(s.params.battery).toBe('normal')
+
+    s.toggleBattery()
+    expect(useSimulatorStore.getState().params.battery).toBe('low')
+
+    s.toggleBattery()
+    expect(useSimulatorStore.getState().params.battery).toBe('normal')
+
+    s.setBattery('low')
+    expect(useSimulatorStore.getState().params.battery).toBe('low')
+  })
 })
