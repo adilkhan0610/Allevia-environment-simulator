@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     # Population Backend Integration
     POPULATION_BACKEND_INTEGRATION_ENABLED: bool = True
     POPULATION_API_BASE_URL: str = "http://localhost:8000"
-    NODE_ID: str = "N03"
+    NODE_ID: str = "N02"
     SITE_ID: str = "S03"
     ZONE_ID: str = "B"
     POPULATION_DEVICE_KEY: str = ""
