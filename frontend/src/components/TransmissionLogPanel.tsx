@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { useSimulatorStore, RUN_SECONDS } from '@/store/simulatorStore'
+import { useTelemetryStore } from '@/store/telemetryStore'
 
 export const TransmissionLogPanel: React.FC = () => {
   const status = useSimulatorStore((s) => s.status)
@@ -8,6 +9,9 @@ export const TransmissionLogPanel: React.FC = () => {
   const logs = useSimulatorStore((s) => s.logs)
   const params = useSimulatorStore((s) => s.params)
   const tick = useSimulatorStore((s) => s.tick)
+
+  const latestPacket = useTelemetryStore((s) => s.latestPacket)
+  const connectionStatus = useTelemetryStore((s) => s.connectionStatus)
 
   const logContainerRef = useRef<HTMLDivElement>(null)
 
@@ -29,6 +33,9 @@ export const TransmissionLogPanel: React.FC = () => {
 
   // Status text mapping
   const getStatusText = () => {
+    if (connectionStatus === 'CONNECTED') {
+      return 'Live Bridge · Streaming'
+    }
     switch (status) {
       case 'running':
         return 'Sending data...'
@@ -102,7 +109,7 @@ export const TransmissionLogPanel: React.FC = () => {
           Live Data Packet (JSON)
         </div>
         <pre className="flex-1 overflow-y-auto text-[10.5px] leading-tight text-[var(--foreground)] custom-scrollbar select-text">
-          {JSON.stringify(telemetryPacket, null, 2)}
+          {JSON.stringify(latestPacket || telemetryPacket, null, 2)}
         </pre>
       </div>
 

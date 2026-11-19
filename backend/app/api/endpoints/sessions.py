@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from app.schemas.session import SessionCreateRequest, SessionResponse, SessionDeleteResponse
 from app.schemas.telemetry import TelemetryPacket
 from app.services.session_service import session_service
+from app.services.integration_service import integration_service
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
@@ -120,7 +121,9 @@ async def control_engine(session_id: str, payload: EngineControlAction):
         session.status = "IDLE"
     elif act == "step":
         packet = engine.step(dt=payload.dt or 1.0)
-        return {"action": "step", "packet": packet.model_dump()}
+        if integration_service.enabled and integration_service.mode == "LIVE_BRIDGE":
+            await integration_service.forward_telemetry(packet)
+        return {"action": "step", "packet": packet.model_dump(mode="json")}
     elif act == "speed":
         if payload.speed_multiplier is not None:
             engine.set_speed(payload.speed_multiplier)

@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     DEFAULT_DEVICE_ID: str = "ALLEVIA-SIM-001"
     TELEMETRY_SOURCE: str = "simulated"
 
+    # Population Backend Integration
+    POPULATION_BACKEND_INTEGRATION_ENABLED: bool = True
+    POPULATION_API_BASE_URL: str = "http://localhost:8000"
+    NODE_ID: str = "N03"
+    SITE_ID: str = "S03"
+    ZONE_ID: str = "B"
+    POPULATION_DEVICE_KEY: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { APP_NAME } from '@/config/brand'
 import { useSimulatorStore } from '@/store/simulatorStore'
 import { useThemeStore } from '@/store/themeStore'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import { apiClient } from '@/services/apiClient'
 import { ParametersPanel } from '@/components/ParametersPanel'
 import { HardwareModel } from '@/three/HardwareModel'
 import { TransmissionLogPanel } from '@/components/TransmissionLogPanel'
@@ -9,6 +11,9 @@ import { AboutModal } from '@/components/AboutModal'
 
 export const SimulatorPage: React.FC = () => {
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  useWebSocket(sessionId)
+
   const status = useSimulatorStore((s) => s.status)
   const dirty = useSimulatorStore((s) => s.dirty)
   const start = useSimulatorStore((s) => s.start)
@@ -19,13 +24,31 @@ export const SimulatorPage: React.FC = () => {
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (status === 'running') {
+      if (sessionId) {
+        try {
+          await apiClient.controlEngine(sessionId, { action: 'stop' })
+          await apiClient.deleteSession(sessionId)
+        } catch (e) {
+          console.warn('Session teardown warning:', e)
+        }
+        setSessionId(null)
+      }
       stop()
-    } else if (status === 'completed' && !dirty) {
-      restart()
     } else {
-      start()
+      if (status === 'completed' && !dirty) {
+        restart()
+      } else {
+        start()
+      }
+      try {
+        const session = await apiClient.createSession()
+        setSessionId(session.session_id)
+        await apiClient.controlEngine(session.session_id, { action: 'start' })
+      } catch (e) {
+        console.warn('Backend session connect warning:', e)
+      }
     }
   }
 
