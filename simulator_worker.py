@@ -25,8 +25,8 @@ POPULATION_API_BASE = os.environ.get("POPULATION_API_BASE", "http://localhost:80
 DEVICE_KEY = os.environ.get("POPULATION_DEVICE_KEY", "Ms5C-o-MDq3OUJfa10nr_k1ANiqcnU3oME5uNVVAAMk")
 CADENCE_SECONDS = int(os.environ.get("SIMULATOR_INTERVAL_S", "60"))
 
-# Hardware reservation setting (None means N01-N05 simulated; 'N05' leaves N05 for real hardware)
-RESERVED_HARDWARE_NODE_ID: str | None = None
+# Hardware reservation setting ('N06' reserved exclusively for real hardware)
+RESERVED_HARDWARE_NODE_ID: str | None = "N06"
 
 STATE_FILE = Path(__file__).parent / "simulator_worker_state.json"
 OVERRIDE_FILE = Path(__file__).parent / "simulator_override.json"
@@ -238,7 +238,7 @@ def run_worker_loop():
         }
 
         for nid, node in nodes.items():
-            if nid == RESERVED_HARDWARE_NODE_ID:
+            if nid == RESERVED_HARDWARE_NODE_ID or nid == "N06":
                 continue
 
             node.tick()
