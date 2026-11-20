@@ -66,11 +66,11 @@ def calculate_wbgt(air_c: float, rh_pct: float, globe_c: float | None = None) ->
 
 
 NODE_CONFIGS = {
-    "N01": {"site_id": "S13", "zone": "A", "zone_name": "Mussafah Industrial Area", "air_c": 28.2, "rh_pct": 48.0, "pressure_hpa": 1014.2, "aqi": 45, "battery_pct": 94.5},
+    "N01": {"site_id": "S13", "zone": "A", "zone_name": "Mussafah Industrial Area", "air_c": 28.2, "rh_pct": 48.0, "pressure_hpa": 1014.2, "aqi": 45, "battery_pct": 95.0},
     "N02": {"site_id": "S03", "zone": "B", "zone_name": "Industrial City of Abu Dhabi (ICAD)", "air_c": 28.6, "rh_pct": 50.0, "pressure_hpa": 1013.8, "aqi": 48, "battery_pct": 95.0},
-    "N03": {"site_id": "S17", "zone": "C", "zone_name": "KEZAD Al Taweelah", "air_c": 27.8, "rh_pct": 54.0, "pressure_hpa": 1015.0, "aqi": 42, "battery_pct": 92.0},
-    "N04": {"site_id": "S20", "zone": "D", "zone_name": "Zayed Port (Mina Zayed)", "air_c": 27.4, "rh_pct": 58.0, "pressure_hpa": 1015.5, "aqi": 40, "battery_pct": 93.0},
-    "N05": {"site_id": "S22", "zone": "E", "zone_name": "Al Mafraq Workers Residential City", "air_c": 28.0, "rh_pct": 46.0, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 94.0},
+    "N03": {"site_id": "S17", "zone": "C", "zone_name": "KEZAD Al Taweelah", "air_c": 27.8, "rh_pct": 54.0, "pressure_hpa": 1015.0, "aqi": 42, "battery_pct": 14.0},
+    "N04": {"site_id": "S20", "zone": "D", "zone_name": "Zayed Port (Mina Zayed)", "air_c": 27.4, "rh_pct": 58.0, "pressure_hpa": 1015.5, "aqi": 40, "battery_pct": 95.0},
+    "N05": {"site_id": "S22", "zone": "E", "zone_name": "Al Mafraq Workers Residential City", "air_c": 28.0, "rh_pct": 46.0, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 14.0},
 }
 
 
@@ -113,6 +113,9 @@ class NodeState:
         else:
             self.flame_detected = False
             self.flame_ticks = 0
+        if "battery" in override or "battery_pct" in override:
+            val = float(override.get("battery_pct", override.get("battery", 95)))
+            self.cur_battery = 14.0 if (val <= 35 or val == 14.0) else 95.0
 
     def tick(self):
         if self.override:
@@ -137,8 +140,8 @@ class NodeState:
                 self.flame_ticks -= 1
             self.flame_detected = self.flame_ticks > 0
 
-            # Natural battery drain
-            self.cur_battery = max(5.0, round(self.cur_battery - 0.01, 2))
+            # Battery for simulated nodes: strictly 95.0% or 14.0%
+            self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
 
             # Snap back to normal when diff is negligible
             if abs(self.cur_air - self.base_air) < 0.2 and abs(self.cur_aqi - self.base_aqi) < 4 and not self.flame_detected:
@@ -155,7 +158,7 @@ class NodeState:
             self.cur_p = round(self.cur_p + theta * (self.base_p - self.cur_p) + random.uniform(-0.2, 0.2), 1)
             self.cur_aqi = round(max(15.0, min(75.0, self.cur_aqi + theta * (self.base_aqi - self.cur_aqi) + random.uniform(-2.0, 2.0))), 0)
             self.flame_detected = False
-            self.cur_battery = max(5.0, round(self.cur_battery - 0.01, 2))
+            self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
 
     def build_payload(self) -> dict:
         pm25 = aqi_to_pm25(self.cur_aqi)
