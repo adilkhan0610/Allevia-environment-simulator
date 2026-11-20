@@ -50,9 +50,12 @@ class IntegrationService:
         self.enabled = enabled
 
     def set_target_node(self, node_ref: int | str) -> Dict[str, Any]:
-        """Switch target node dynamically (1-5 or N01-N05)."""
+        """Switch target node dynamically (1-5 or N01-N05). N06 is reserved for real hardware."""
         if isinstance(node_ref, str):
             clean = node_ref.strip().upper()
+            if clean in ("N06", "6"):
+                logger.warning("Attempted to set simulator target to reserved hardware node N06; rejected.")
+                return {"status": "error", "message": "N06 is reserved exclusively for real hardware"}
             found_num = None
             for num, profile in NODE_REGISTRY.items():
                 if profile["node_id"] == clean or str(num) == clean:
