@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.router import api_router
 from app.api.endpoints.health import router as health_router
+from app.api.endpoints.internal import router as internal_router
 from app.services.session_service import session_service
 from app.websocket.connection_manager import ws_manager
 import logging
@@ -29,8 +30,9 @@ app.add_middleware(
 )
 
 # Include Routers
-app.include_router(health_router)  # Exposes /health
-app.include_router(api_router)     # Exposes /api/v1/...
+app.include_router(health_router)    # Exposes /health
+app.include_router(internal_router)  # Exposes /internal/tick
+app.include_router(api_router)       # Exposes /api/v1/...
 
 
 # WebSocket Simulation Stream Endpoint
