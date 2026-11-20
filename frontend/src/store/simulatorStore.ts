@@ -96,6 +96,7 @@ export interface SimulatorState {
   stop: () => void
   restart: () => void
   tickSecond: () => void
+  tick: () => void
   dispatchNetworkCycle: () => Promise<void>
   triggerImmediateSpike: () => Promise<void>
   reset: () => void
@@ -313,6 +314,9 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => ({
     } else {
       set({ countdownSeconds: countdownSeconds - 1 })
     }
+  },
+  tick: () => {
+    get().tickSecond()
   },
 
   // Dispatches readings for every node (N01-N05) every 60s
