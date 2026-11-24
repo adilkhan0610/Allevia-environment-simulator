@@ -16,12 +16,13 @@ export const SimulatorPage: React.FC = () => {
 
   const start = useSimulatorStore((s) => s.start)
   const reset = useSimulatorStore((s) => s.reset)
+  const scenarioLevel = useSimulatorStore((s) => s.scenarioLevel)
 
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   const handleAction = async () => {
-    // Apply override spike immediately for selected node and restart decay
+    // Toggles between Elevated and Alert for all zones on upcoming minute cycle
     start()
     if (sessionId) {
       try {
@@ -32,7 +33,7 @@ export const SimulatorPage: React.FC = () => {
     }
   }
 
-  const actionLabel = 'Start / Trigger Spike'
+  const actionLabel = scenarioLevel === 'alert' ? 'Reset to Elevated' : 'Start / Trigger Spike'
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[var(--background)] text-[var(--foreground)] select-none transition-colors">

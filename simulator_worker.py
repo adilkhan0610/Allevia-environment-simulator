@@ -97,11 +97,19 @@ def calculate_wbgt(air_c: float, rh_pct: float, globe_c: float | None = None) ->
 
 
 NODE_CONFIGS = {
-    "N01": {"site_id": "S13", "zone": "A", "zone_name": "Mussafah Industrial Area", "air_c": 28.2, "rh_pct": 48.0, "pressure_hpa": 1014.2, "aqi": 45, "battery_pct": 95.0},
-    "N02": {"site_id": "S03", "zone": "B", "zone_name": "Industrial City of Abu Dhabi (ICAD)", "air_c": 28.6, "rh_pct": 50.0, "pressure_hpa": 1013.8, "aqi": 48, "battery_pct": 95.0},
-    "N03": {"site_id": "S17", "zone": "C", "zone_name": "KEZAD Al Taweelah", "air_c": 27.8, "rh_pct": 54.0, "pressure_hpa": 1015.0, "aqi": 42, "battery_pct": 14.0},
-    "N04": {"site_id": "S20", "zone": "D", "zone_name": "Zayed Port (Mina Zayed)", "air_c": 27.4, "rh_pct": 58.0, "pressure_hpa": 1015.5, "aqi": 40, "battery_pct": 95.0},
-    "N05": {"site_id": "S22", "zone": "E", "zone_name": "Al Mafraq Workers Residential City", "air_c": 28.0, "rh_pct": 46.0, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 14.0},
+    "N01": {"site_id": "S13", "zone": "A", "zone_name": "Mussafah Industrial Area", "air_c": 38.0, "rh_pct": 35.0, "globe_c": 46.0, "pm25": 95.0, "mq2_adc": 160, "mq3_adc": 80, "mq135_adc": 200, "pressure_hpa": 1014.2, "aqi": 171, "battery_pct": 95.0, "wbgt": 31.0},
+    "N02": {"site_id": "S03", "zone": "B", "zone_name": "Industrial City of Abu Dhabi (ICAD)", "air_c": 38.0, "rh_pct": 35.0, "globe_c": 46.0, "pm25": 95.0, "mq2_adc": 160, "mq3_adc": 80, "mq135_adc": 200, "pressure_hpa": 1013.8, "aqi": 171, "battery_pct": 95.0, "wbgt": 31.0},
+    "N03": {"site_id": "S17", "zone": "C", "zone_name": "KEZAD Al Taweelah", "air_c": 33.0, "rh_pct": 55.0, "globe_c": 36.0, "pm25": 45.0, "mq2_adc": 350, "mq3_adc": 700, "mq135_adc": 900, "pressure_hpa": 1015.0, "aqi": 124, "battery_pct": 14.0, "wbgt": 28.6},
+    "N04": {"site_id": "S20", "zone": "D", "zone_name": "Zayed Port (Mina Zayed)", "air_c": 36.0, "rh_pct": 50.0, "globe_c": 41.0, "pm25": 12.0, "mq2_adc": 145, "mq3_adc": 75, "mq135_adc": 180, "pressure_hpa": 1015.5, "aqi": 50, "battery_pct": 95.0, "wbgt": 31.0},
+    "N05": {"site_id": "S22", "zone": "E", "zone_name": "Al Mafraq Workers Residential City", "air_c": 28.0, "rh_pct": 46.0, "globe_c": 29.9, "pm25": 10.5, "mq2_adc": 132, "mq3_adc": 74, "mq135_adc": 118, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 14.0, "wbgt": 22.5},
+}
+
+ZONE_ALERT_CONFIGS = {
+    "N01": {"air_c": 40.0, "rh_pct": 30.0, "globe_c": 52.0, "pm25": 220.0, "mq2_adc": 180, "mq3_adc": 85, "mq135_adc": 220, "pressure_hpa": 1014.2, "aqi": 270, "battery_pct": 95.0, "wbgt": 32.5},
+    "N02": {"air_c": 40.0, "rh_pct": 30.0, "globe_c": 52.0, "pm25": 220.0, "mq2_adc": 180, "mq3_adc": 85, "mq135_adc": 220, "pressure_hpa": 1013.8, "aqi": 270, "battery_pct": 95.0, "wbgt": 32.5},
+    "N03": {"air_c": 34.0, "rh_pct": 55.0, "globe_c": 38.0, "pm25": 60.0, "mq2_adc": 700, "mq3_adc": 1600, "mq135_adc": 2200, "pressure_hpa": 1015.0, "aqi": 153, "battery_pct": 14.0, "wbgt": 29.5},
+    "N04": {"air_c": 38.0, "rh_pct": 52.0, "globe_c": 46.0, "pm25": 12.0, "mq2_adc": 145, "mq3_adc": 75, "mq135_adc": 180, "pressure_hpa": 1015.5, "aqi": 50, "battery_pct": 95.0, "wbgt": 33.5},
+    "N05": {"air_c": 28.0, "rh_pct": 46.0, "globe_c": 29.9, "pm25": 10.5, "mq2_adc": 132, "mq3_adc": 74, "mq135_adc": 118, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 14.0, "wbgt": 22.5},
 }
 
 
@@ -116,12 +124,22 @@ class NodeState:
         self.base_p = cfg["pressure_hpa"]
         self.base_aqi = cfg["aqi"]
         self.base_battery = cfg["battery_pct"]
+        self.base_pm25 = float(cfg.get("pm25", aqi_to_pm25(self.base_aqi)))
+        self.base_globe = float(cfg.get("globe_c", self.base_air + 2.0))
+        self.base_mq2 = int(cfg.get("mq2_adc", 140))
+        self.base_mq3 = int(cfg.get("mq3_adc", 75))
+        self.base_mq135 = int(cfg.get("mq135_adc", 120))
 
         self.cur_air = self.base_air
         self.cur_rh = self.base_rh
         self.cur_p = self.base_p
         self.cur_aqi = self.base_aqi
         self.cur_battery = self.base_battery
+        self.cur_pm25 = self.base_pm25
+        self.cur_globe = self.base_globe
+        self.cur_mq2 = self.base_mq2
+        self.cur_mq3 = self.base_mq3
+        self.cur_mq135 = self.base_mq135
         self.flame_detected = False
         self.flame_ticks = 0
 
@@ -130,14 +148,26 @@ class NodeState:
 
     def apply_override(self, override: dict):
         self.override = override
-        if "temperature" in override:
-            self.cur_air = float(override["temperature"])
-        if "humidity" in override:
-            self.cur_rh = float(override["humidity"])
-        if "airQuality" in override:
-            self.cur_aqi = float(override["airQuality"])
-        if "pressure" in override:
-            self.cur_p = float(override["pressure"])
+        if "temperature" in override or "air_c" in override:
+            self.cur_air = float(override.get("temperature", override.get("air_c", self.cur_air)))
+        if "humidity" in override or "rh_pct" in override:
+            self.cur_rh = float(override.get("humidity", override.get("rh_pct", self.cur_rh)))
+        if "airQuality" in override or "aqi" in override:
+            self.cur_aqi = float(override.get("airQuality", override.get("aqi", self.cur_aqi)))
+        if "pm25" in override:
+            self.cur_pm25 = float(override["pm25"])
+        else:
+            self.cur_pm25 = aqi_to_pm25(self.cur_aqi)
+        if "globe_c" in override:
+            self.cur_globe = float(override["globe_c"])
+        if "pressure" in override or "pressure_hpa" in override:
+            self.cur_p = float(override.get("pressure", override.get("pressure_hpa", self.cur_p)))
+        if "mq2_adc" in override:
+            self.cur_mq2 = int(override["mq2_adc"])
+        if "mq3_adc" in override:
+            self.cur_mq3 = int(override["mq3_adc"])
+        if "mq135_adc" in override:
+            self.cur_mq135 = int(override["mq135_adc"])
         if "infrared" in override and float(override["infrared"]) > 75:
             self.flame_detected = True
             self.flame_ticks = 3
@@ -164,8 +194,20 @@ class NodeState:
             p_diff = self.cur_p - self.base_p
             self.cur_p = round(self.base_p + p_diff * 0.85 + random.uniform(-0.2, 0.2), 1)
 
-            aqi_diff = self.cur_aqi - self.base_aqi
-            self.cur_aqi = round(self.base_aqi + aqi_diff * k_pm + random.uniform(-1.5, 1.5), 0)
+            pm25_diff = self.cur_pm25 - self.base_pm25
+            self.cur_pm25 = round(self.base_pm25 + pm25_diff * k_pm + random.uniform(-0.5, 0.5), 1)
+
+            globe_diff = self.cur_globe - self.base_globe
+            self.cur_globe = round(self.base_globe + globe_diff * k_temp + random.uniform(-0.1, 0.1), 2)
+
+            mq2_diff = self.cur_mq2 - self.base_mq2
+            self.cur_mq2 = max(0, int(round(self.base_mq2 + mq2_diff * k_pm + random.uniform(-1.0, 1.0))))
+
+            mq3_diff = self.cur_mq3 - self.base_mq3
+            self.cur_mq3 = max(0, int(round(self.base_mq3 + mq3_diff * k_pm + random.uniform(-1.0, 1.0))))
+
+            mq135_diff = self.cur_mq135 - self.base_mq135
+            self.cur_mq135 = max(0, int(round(self.base_mq135 + mq135_diff * k_pm + random.uniform(-1.0, 1.0))))
 
             if self.flame_ticks > 0:
                 self.flame_ticks -= 1
@@ -175,39 +217,31 @@ class NodeState:
             self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
 
             # Snap back to normal when diff is negligible
-            if abs(self.cur_air - self.base_air) < 0.2 and abs(self.cur_aqi - self.base_aqi) < 4 and not self.flame_detected:
+            if abs(self.cur_air - self.base_air) < 0.2 and abs(self.cur_pm25 - self.base_pm25) < 2 and not self.flame_detected:
                 self.override = None
                 self.cur_air = self.base_air
-                self.cur_aqi = self.base_aqi
+                self.cur_pm25 = self.base_pm25
+                self.cur_globe = self.base_globe
                 self.cur_rh = self.base_rh
                 self.cur_p = self.base_p
+                self.cur_mq2 = self.base_mq2
+                self.cur_mq3 = self.base_mq3
+                self.cur_mq135 = self.base_mq135
         else:
-            # Bounded mean-reverting random walk around normal baseline
+            # Bounded mean-reverting random walk around continuous elevated baseline
             theta = 0.25
-            self.cur_air = round(self.cur_air + theta * (self.base_air - self.cur_air) + random.uniform(-0.2, 0.2), 2)
-            self.cur_rh = round(max(20.0, min(90.0, self.cur_rh + theta * (self.base_rh - self.cur_rh) + random.uniform(-0.7, 0.7))), 1)
+            self.cur_air = round(self.cur_air + theta * (self.base_air - self.cur_air) + random.uniform(-0.15, 0.15), 2)
+            self.cur_rh = round(max(10.0, min(95.0, self.cur_rh + theta * (self.base_rh - self.cur_rh) + random.uniform(-0.4, 0.4))), 1)
             self.cur_p = round(self.cur_p + theta * (self.base_p - self.cur_p) + random.uniform(-0.2, 0.2), 1)
-            self.cur_aqi = round(max(15.0, min(75.0, self.cur_aqi + theta * (self.base_aqi - self.cur_aqi) + random.uniform(-2.0, 2.0))), 0)
+            self.cur_pm25 = round(max(0.0, self.cur_pm25 + theta * (self.base_pm25 - self.cur_pm25) + random.uniform(-0.3, 0.3)), 1)
+            self.cur_globe = round(self.cur_globe + theta * (self.base_globe - self.cur_globe) + random.uniform(-0.1, 0.1), 2)
+            self.cur_mq2 = max(0, int(round(self.cur_mq2 + theta * (self.base_mq2 - self.cur_mq2) + random.uniform(-1.5, 1.5))))
+            self.cur_mq3 = max(0, int(round(self.cur_mq3 + theta * (self.base_mq3 - self.cur_mq3) + random.uniform(-1.5, 1.5))))
+            self.cur_mq135 = max(0, int(round(self.cur_mq135 + theta * (self.base_mq135 - self.cur_mq135) + random.uniform(-1.5, 1.5))))
             self.flame_detected = False
-<<<<<<< Updated upstream
-            self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
-=======
-<<<<<<< HEAD
             self.cur_battery = self.base_battery
-=======
             self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
-
-    def build_payload(self, ts: str | None = None) -> dict:
-        pm25 = aqi_to_pm25(self.cur_aqi)
-        globe_c = round(self.cur_air + 2.0 + random.uniform(-0.1, 0.1), 2)
-        wbgt = calculate_wbgt(self.cur_air, self.cur_rh, globe_c)
-
-        # Raw gas ADC estimates
-        mq2_adc = int(round(135 + (self.cur_aqi / 500.0) * 500 + random.uniform(-3, 3)))
-        mq3_adc = int(round(75 + (self.cur_aqi / 500.0) * 450 + random.uniform(-2, 2)))
-        mq135_adc = int(round(120 + (self.cur_aqi / 500.0) * 600 + random.uniform(-3, 3)))
->>>>>>> 9e726fbbf87086ce69256db821de2ef595517dd5
->>>>>>> Stashed changes
+            self.cur_battery = self.base_battery
 
     def build_payload(self, ts: str | None = None) -> dict:
         pm25 = aqi_to_pm25(self.cur_aqi)
@@ -219,6 +253,7 @@ class NodeState:
         mq3_adc = int(round(75 + (self.cur_aqi / 500.0) * 450 + random.uniform(-2, 2)))
         mq135_adc = int(round(120 + (self.cur_aqi / 500.0) * 600 + random.uniform(-3, 3)))
 
+    def build_payload(self, ts: str | None = None) -> dict:
         return {
             "schema": 1,
             "node_id": self.node_id,
@@ -228,12 +263,12 @@ class NodeState:
             "air_c": self.cur_air,
             "rh_pct": self.cur_rh,
             "pressure_hpa": self.cur_p,
-            "pm25": pm25,
-            "globe_c": globe_c,
+            "pm25": self.cur_pm25,
+            "globe_c": self.cur_globe,
             "battery_pct": self.cur_battery,
-            "mq2_adc": min(1023, max(0, mq2_adc)),
-            "mq3_adc": min(1023, max(0, mq3_adc)),
-            "mq135_adc": min(1023, max(0, mq135_adc)),
+            "mq2_adc": max(0, int(round(self.cur_mq2))),
+            "mq3_adc": max(0, int(round(self.cur_mq3))),
+            "mq135_adc": max(0, int(round(self.cur_mq135))),
             "flame_ir_detected": self.flame_detected,
             "buffered": False,
         }
@@ -244,6 +279,30 @@ def check_for_override(nodes: dict[str, NodeState]):
         return
     try:
         data = json.loads(OVERRIDE_FILE.read_text())
+        level = data.get("level") or data.get("scenario_level")
+        if level == "alert":
+            logger.info("Applying global ALERT level override across all nodes")
+            for nid, node in nodes.items():
+                if nid in ZONE_ALERT_CONFIGS:
+                    node.apply_override(ZONE_ALERT_CONFIGS[nid])
+            OVERRIDE_FILE.unlink()
+            return
+        elif level == "elevated":
+            logger.info("Resetting all nodes to ELEVATED level baseline")
+            for nid, node in nodes.items():
+                if nid in NODE_CONFIGS:
+                    node.override = None
+                    node.cur_air = node.base_air
+                    node.cur_rh = node.base_rh
+                    node.cur_p = node.base_p
+                    node.cur_pm25 = node.base_pm25
+                    node.cur_globe = node.base_globe
+                    node.cur_mq2 = node.base_mq2
+                    node.cur_mq3 = node.base_mq3
+                    node.cur_mq135 = node.base_mq135
+            OVERRIDE_FILE.unlink()
+            return
+
         node_id = data.get("node_id") or data.get("selectedNode")
         if node_id in nodes:
             logger.info("Applying user override for node %s: %s", node_id, data)
