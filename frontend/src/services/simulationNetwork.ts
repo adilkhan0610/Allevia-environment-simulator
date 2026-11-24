@@ -10,7 +10,7 @@
  */
 
 export const SIMULATION_CADENCE_SECONDS = 60;
-export const POPULATION_API_BASE = 'http://localhost:8000';
+export const POPULATION_API_BASE = 'https://population-and-workforce-health-early.onrender.com';
 export const POPULATION_DEVICE_KEY = 'Ms5C-o-MDq3OUJfa10nr_k1ANiqcnU3oME5uNVVAAMk';
 
 /**
@@ -356,9 +356,9 @@ export function stepSpikeDecay(
   const nextOverrideState: OverrideState | null = isSettled
     ? null
     : {
-        ...override,
-        flameTicksRemaining,
-      };
+      ...override,
+      flameTicksRemaining,
+    };
 
   return { nextMetrics, nextOverride: nextOverrideState };
 }
