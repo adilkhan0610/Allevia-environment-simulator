@@ -19,8 +19,8 @@ describe('SimulatorPage Single-Screen Component', () => {
     expect(screen.getByText('Allevia Sim')).toBeInTheDocument()
     expect(screen.getByText('Simulator')).toBeInTheDocument()
 
-    // Center pill button (initial: Start) and Reset Values button on its right side
-    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+    // Center pill button (initial: Start / Trigger Spike) and Reset Values button on its right side
+    expect(screen.getByRole('button', { name: 'Start / Trigger Spike' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reset Values' })).toBeInTheDocument()
 
     // Right pill buttons (Theme toggle & About)
@@ -46,8 +46,8 @@ describe('SimulatorPage Single-Screen Component', () => {
 
     // Right column
     expect(screen.getByLabelText('Transmission Log')).toBeInTheDocument()
-    expect(screen.getByText('Live Data Packet (JSON)')).toBeInTheDocument()
-    expect(screen.getByText('Transmission Log')).toBeInTheDocument()
+    expect(screen.getByText('Last Sent Payload (Schema 1)')).toBeInTheDocument()
+    expect(screen.getByText('Transmission Logs')).toBeInTheDocument()
   })
 
   it('toggles theme between light and dark mode', () => {
@@ -89,25 +89,19 @@ describe('SimulatorPage Single-Screen Component', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('handles Start / Stop / Restart transitions, dirty parameter changes and Reset Values', () => {
+  it('handles Start / Trigger Spike, dirty parameter changes and Reset Values', () => {
     render(<SimulatorPage />)
 
-    const actionBtn = screen.getByRole('button', { name: 'Start' })
-    expect(actionBtn).toHaveTextContent('Start')
+    const actionBtn = screen.getByRole('button', { name: 'Start / Trigger Spike' })
+    expect(actionBtn).toBeInTheDocument()
 
-    // Click Start -> becomes Stop
+    // Trigger action
     fireEvent.click(actionBtn)
-    expect(actionBtn).toHaveTextContent('Stop')
-
-    // Click Stop -> becomes Start
-    fireEvent.click(actionBtn)
-    expect(actionBtn).toHaveTextContent('Start')
 
     // Change a slider: Temperature
     const tempInput = screen.getByLabelText('Temperature slider')
     fireEvent.change(tempInput, { target: { value: '35' } })
     expect(useSimulatorStore.getState().dirty).toBe(true)
-    expect(actionBtn).toHaveTextContent('Start')
 
     // Click Reset Values button
     const resetValsBtn = screen.getByRole('button', { name: 'Reset Values' })

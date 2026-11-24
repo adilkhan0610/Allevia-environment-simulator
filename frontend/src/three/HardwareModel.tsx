@@ -51,6 +51,11 @@ export const HardwareModel: React.FC = () => {
   const humidity = useSimulatorStore((s) => s.params.humidity)
   const airQuality = useSimulatorStore((s) => s.params.airQuality)
   const gases = useSimulatorStore((s) => s.params.gases)
+  const selectedNode = useSimulatorStore((s) => s.params.selectedNode)
+  const airSpeed = useSimulatorStore((s) => s.params.airSpeed)
+  const battery = useSimulatorStore((s) => s.params.battery)
+  const zoneLetters = ['A', 'B', 'C', 'D', 'E'] as const
+  const activeZone = zoneLetters[(selectedNode - 1) || 0]
 
   // Refs to pass values into the Three.js loop without tearing down the scene
   const animStateRef = useRef({
@@ -1084,11 +1089,6 @@ export const HardwareModel: React.FC = () => {
   }
 
   const partInfo = selectedPart ? PART_DESCRIPTIONS[selectedPart] : null
-  const selectedNode = useSimulatorStore((s) => s.params.selectedNode)
-  const airSpeed = useSimulatorStore((s) => s.params.airSpeed)
-  const battery = useSimulatorStore((s) => s.params.battery)
-  const zoneLetters = ['A', 'B', 'C', 'D', 'E'] as const
-  const activeZone = zoneLetters[(selectedNode - 1) || 0]
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden bg-[var(--surface)] text-[var(--foreground)] rounded-[16px] border border-[var(--border)] shadow-[var(--shadow-panel)] transition-colors">
