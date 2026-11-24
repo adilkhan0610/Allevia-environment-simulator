@@ -85,7 +85,12 @@ export interface NodeSimConfig {
 }
 
 /**
- * Realistic UAE November normal baselines (estimated WBGT ~22-23.5°C, PM2.5 ~12-18 ug/m3)
+ * Realistic UAE November Elevated Baselines (Continuously maintained instead of normal)
+ * Zone A: Dust & thermal overload (Elevated: air_c=38, rh_pct=35, globe_c=46, pm25=95, mq2=160, mq3=80, mq135=200, wbgt=31)
+ * Zone B: Same as Zone A
+ * Zone C: Chemical vapors & inhalation (Elevated: air_c=33, rh_pct=55, globe_c=36, pm25=45, mq2=350, mq3=700, mq135=900, wbgt=28.6)
+ * Zone D: Thermal heat stress (Elevated: air_c=36, rh_pct=50, globe_c=41, pm25=12, mq2=145, mq3=75, mq135=180, wbgt=31)
+ * Zone E: Retained baseline
  */
 export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
   N01: {
@@ -95,17 +100,17 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'Mussafah Industrial Area',
     label: 'Node 1 — Zone A (Mussafah)',
     baseline: {
-      air_c: 28.2,
-      rh_pct: 48.0,
+      air_c: 38.0,
+      rh_pct: 35.0,
       pressure_hpa: 1014.2,
-      aqi: 45,
-      pm25: 10.8,
-      globe_c: 30.2,
-      wbgt_c: 22.8,
-      mq2_adc: 135,
-      mq3_adc: 75,
-      mq135_adc: 120,
-      battery_pct: 94.5,
+      aqi: 171,
+      pm25: 95.0,
+      globe_c: 46.0,
+      wbgt_c: 31.0,
+      mq2_adc: 160,
+      mq3_adc: 80,
+      mq135_adc: 200,
+      battery_pct: 95.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -117,16 +122,16 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'Industrial City of Abu Dhabi (ICAD)',
     label: 'Node 2 — Zone B (ICAD)',
     baseline: {
-      air_c: 28.6,
-      rh_pct: 50.0,
+      air_c: 38.0,
+      rh_pct: 35.0,
       pressure_hpa: 1013.8,
-      aqi: 48,
-      pm25: 11.5,
-      globe_c: 30.6,
-      wbgt_c: 23.2,
-      mq2_adc: 140,
+      aqi: 171,
+      pm25: 95.0,
+      globe_c: 46.0,
+      wbgt_c: 31.0,
+      mq2_adc: 160,
       mq3_adc: 80,
-      mq135_adc: 125,
+      mq135_adc: 200,
       battery_pct: 95.0,
       flame_ir_detected: false,
       charging: false,
@@ -139,17 +144,17 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'KEZAD Al Taweelah',
     label: 'Node 3 — Zone C (KEZAD)',
     baseline: {
-      air_c: 27.8,
-      rh_pct: 54.0,
+      air_c: 33.0,
+      rh_pct: 55.0,
       pressure_hpa: 1015.0,
-      aqi: 42,
-      pm25: 10.1,
-      globe_c: 29.8,
-      wbgt_c: 23.0,
-      mq2_adc: 130,
-      mq3_adc: 72,
-      mq135_adc: 115,
-      battery_pct: 92.0,
+      aqi: 124,
+      pm25: 45.0,
+      globe_c: 36.0,
+      wbgt_c: 28.6,
+      mq2_adc: 350,
+      mq3_adc: 700,
+      mq135_adc: 900,
+      battery_pct: 14.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -161,17 +166,17 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'Zayed Port (Mina Zayed)',
     label: 'Node 4 — Zone D (Zayed Port)',
     baseline: {
-      air_c: 27.4,
-      rh_pct: 58.0,
+      air_c: 36.0,
+      rh_pct: 50.0,
       pressure_hpa: 1015.5,
-      aqi: 40,
-      pm25: 9.6,
-      globe_c: 29.2,
-      wbgt_c: 23.1,
-      mq2_adc: 128,
-      mq3_adc: 70,
-      mq135_adc: 110,
-      battery_pct: 93.0,
+      aqi: 50,
+      pm25: 12.0,
+      globe_c: 41.0,
+      wbgt_c: 31.0,
+      mq2_adc: 145,
+      mq3_adc: 75,
+      mq135_adc: 180,
+      battery_pct: 95.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -193,7 +198,7 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
       mq2_adc: 132,
       mq3_adc: 74,
       mq135_adc: 118,
-      battery_pct: 94.0,
+      battery_pct: 14.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -201,30 +206,109 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
 };
 
 /**
- * Random walk with mean reversion for natural variation around normal baseline
+ * Scenario Alert Readings triggered on operator trigger
+ */
+export const ZONE_ALERT_READINGS: Record<string, NodeMetrics> = {
+  N01: {
+    air_c: 40.0,
+    rh_pct: 30.0,
+    pressure_hpa: 1014.2,
+    aqi: 270,
+    pm25: 220.0,
+    globe_c: 52.0,
+    wbgt_c: 32.5,
+    mq2_adc: 180,
+    mq3_adc: 85,
+    mq135_adc: 220,
+    battery_pct: 95.0,
+    flame_ir_detected: false,
+    charging: false,
+  },
+  N02: {
+    air_c: 40.0,
+    rh_pct: 30.0,
+    pressure_hpa: 1013.8,
+    aqi: 270,
+    pm25: 220.0,
+    globe_c: 52.0,
+    wbgt_c: 32.5,
+    mq2_adc: 180,
+    mq3_adc: 85,
+    mq135_adc: 220,
+    battery_pct: 95.0,
+    flame_ir_detected: false,
+    charging: false,
+  },
+  N03: {
+    air_c: 34.0,
+    rh_pct: 55.0,
+    pressure_hpa: 1015.0,
+    aqi: 153,
+    pm25: 60.0,
+    globe_c: 38.0,
+    wbgt_c: 29.5,
+    mq2_adc: 700,
+    mq3_adc: 1600,
+    mq135_adc: 2200,
+    battery_pct: 14.0,
+    flame_ir_detected: false,
+    charging: false,
+  },
+  N04: {
+    air_c: 38.0,
+    rh_pct: 52.0,
+    pressure_hpa: 1015.5,
+    aqi: 50,
+    pm25: 12.0,
+    globe_c: 46.0,
+    wbgt_c: 33.5,
+    mq2_adc: 145,
+    mq3_adc: 75,
+    mq135_adc: 180,
+    battery_pct: 95.0,
+    flame_ir_detected: false,
+    charging: false,
+  },
+  N05: {
+    air_c: 28.0,
+    rh_pct: 46.0,
+    pressure_hpa: 1014.0,
+    aqi: 44,
+    pm25: 10.5,
+    globe_c: 29.9,
+    wbgt_c: 22.5,
+    mq2_adc: 132,
+    mq3_adc: 74,
+    mq135_adc: 118,
+    battery_pct: 14.0,
+    flame_ir_detected: false,
+    charging: false,
+  },
+};
+
+/**
+ * Random walk with mean reversion for natural variation around continuous baseline
  */
 export function stepNormalVariation(current: NodeMetrics, base: NodeMetrics): NodeMetrics {
   const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
   // Mean reversion rate theta = 0.25
   const theta = 0.25;
-  const air_c = Number((current.air_c + theta * (base.air_c - current.air_c) + rand(-0.25, 0.25)).toFixed(2));
-  const rh_pct = Number(Math.max(20, Math.min(95, current.rh_pct + theta * (base.rh_pct - current.rh_pct) + rand(-0.8, 0.8))).toFixed(1));
-  const pressure_hpa = Number((current.pressure_hpa + theta * (base.pressure_hpa - current.pressure_hpa) + rand(-0.3, 0.3)).toFixed(1));
-  const aqi = Math.max(15, Math.min(80, Math.round(current.aqi + theta * (base.aqi - current.aqi) + rand(-2, 2))));
-  const pm25 = aqiToPm25(aqi);
+  const air_c = Number((current.air_c + theta * (base.air_c - current.air_c) + rand(-0.15, 0.15)).toFixed(2));
+  const rh_pct = Number(Math.max(10, Math.min(95, current.rh_pct + theta * (base.rh_pct - current.rh_pct) + rand(-0.4, 0.4))).toFixed(1));
+  const pressure_hpa = Number((current.pressure_hpa + theta * (base.pressure_hpa - current.pressure_hpa) + rand(-0.2, 0.2)).toFixed(1));
+  const aqi = base.aqi;
+  const pm25 = Number(Math.max(0, current.pm25 + theta * (base.pm25 - current.pm25) + rand(-0.3, 0.3)).toFixed(1));
 
-  const globe_c = Number((air_c + 2.0 + rand(-0.2, 0.2)).toFixed(2));
-  const wbgt_c = calculateWBGT(air_c, rh_pct, globe_c);
+  const globe_c = Number((current.globe_c + theta * (base.globe_c - current.globe_c) + rand(-0.1, 0.1)).toFixed(2));
+  const wbgt_c = base.wbgt_c;
 
-  const mq2_adc = Math.max(80, Math.min(200, Math.round(current.mq2_adc + theta * (base.mq2_adc - current.mq2_adc) + rand(-3, 3))));
-  const mq3_adc = Math.max(50, Math.min(120, Math.round(current.mq3_adc + theta * (base.mq3_adc - current.mq3_adc) + rand(-2, 2))));
-  const mq135_adc = Math.max(80, Math.min(220, Math.round(current.mq135_adc + theta * (base.mq135_adc - current.mq135_adc) + rand(-3, 3))));
+  const mq2_adc = Math.max(0, Math.round(current.mq2_adc + theta * (base.mq2_adc - current.mq2_adc) + rand(-1.5, 1.5)));
+  const mq3_adc = Math.max(0, Math.round(current.mq3_adc + theta * (base.mq3_adc - current.mq3_adc) + rand(-1.5, 1.5)));
+  const mq135_adc = Math.max(0, Math.round(current.mq135_adc + theta * (base.mq135_adc - current.mq135_adc) + rand(-1.5, 1.5)));
 
-  // Slow natural drain: -0.01% per minute unless charging
-  const battery_pct = current.charging
-    ? Math.min(100, Number((current.battery_pct + 0.5).toFixed(2)))
-    : Math.max(5, Number((current.battery_pct - 0.01).toFixed(2)));
+  // Preserve configured battery percentage
+  const battery_pct = base.battery_pct;
 
   return {
     air_c,

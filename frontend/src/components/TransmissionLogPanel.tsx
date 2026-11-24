@@ -13,6 +13,7 @@ export const TransmissionLogPanel: React.FC = () => {
   const nodeStates = useSimulatorStore((s) => s.nodeStates)
   const lastSentPayload = useSimulatorStore((s) => s.lastSentPayload)
   const logs = useSimulatorStore((s) => s.logs)
+  const scenarioLevel = useSimulatorStore((s) => s.scenarioLevel)
   const tickSecond = useSimulatorStore((s) => s.tickSecond)
   const params = useSimulatorStore((s) => s.params)
   const logContainerRef = useRef<HTMLDivElement>(null)
@@ -144,13 +145,13 @@ export const TransmissionLogPanel: React.FC = () => {
                       )}
                     </div>
                     <div className="shrink-0 whitespace-nowrap">
-                      {isSpike ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 animate-pulse shrink-0 whitespace-nowrap">
-                          Decaying Spike
+                      {isSpike || scenarioLevel === 'alert' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30 animate-pulse shrink-0 whitespace-nowrap">
+                          {scenarioLevel === 'alert' ? 'Alert Level' : 'Decaying Spike'}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 whitespace-nowrap">
-                          Normal Base
+                          Elevated Base
                         </span>
                       )}
                     </div>
