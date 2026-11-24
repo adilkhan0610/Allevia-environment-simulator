@@ -240,6 +240,18 @@ class NodeState:
             self.cur_mq135 = max(0, int(round(self.cur_mq135 + theta * (self.base_mq135 - self.cur_mq135) + random.uniform(-1.5, 1.5))))
             self.flame_detected = False
             self.cur_battery = self.base_battery
+            self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
+            self.cur_battery = self.base_battery
+
+    def build_payload(self, ts: str | None = None) -> dict:
+        pm25 = aqi_to_pm25(self.cur_aqi)
+        globe_c = round(self.cur_air + 2.0 + random.uniform(-0.1, 0.1), 2)
+        wbgt = calculate_wbgt(self.cur_air, self.cur_rh, globe_c)
+
+        # Raw gas ADC estimates
+        mq2_adc = int(round(135 + (self.cur_aqi / 500.0) * 500 + random.uniform(-3, 3)))
+        mq3_adc = int(round(75 + (self.cur_aqi / 500.0) * 450 + random.uniform(-2, 2)))
+        mq135_adc = int(round(120 + (self.cur_aqi / 500.0) * 600 + random.uniform(-3, 3)))
 
     def build_payload(self, ts: str | None = None) -> dict:
         return {
