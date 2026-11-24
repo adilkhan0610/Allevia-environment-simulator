@@ -1,7 +1,8 @@
 """
-Allevia Environment Simulator — Autonomous 60s Server-Side Worker
-Sends simulated telemetry for N01-N05 to http://localhost:8000/api/v1/ingest/readings every 60s.
-Runs continuously in background so telemetry stays fresh even if the browser tab is closed.
+Allevia Environment Simulator — Autonomous Server-Side Worker & Cycle Runner
+Sends simulated telemetry for N01-N05 to http://localhost:8000/api/v1/ingest/readings every 60s
+or on-demand per minute via run_one_cycle().
+Runs continuously in background or invoked by protected HTTP scheduler endpoints.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import math
 import os
 import random
 import sys
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,15 +23,44 @@ from urllib.error import URLError
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("allevia_simulator_worker")
 
-POPULATION_API_BASE = os.environ.get("POPULATION_API_BASE", "http://localhost:8000")
-DEVICE_KEY = os.environ.get("POPULATION_DEVICE_KEY", "Ms5C-o-MDq3OUJfa10nr_k1ANiqcnU3oME5uNVVAAMk")
-CADENCE_SECONDS = int(os.environ.get("SIMULATOR_INTERVAL_S", "60"))
-
 # Hardware reservation setting ('N06' reserved exclusively for real hardware)
 RESERVED_HARDWARE_NODE_ID: str | None = "N06"
 
-STATE_FILE = Path(__file__).parent / "simulator_worker_state.json"
-OVERRIDE_FILE = Path(__file__).parent / "simulator_override.json"
+CADENCE_SECONDS = int(os.environ.get("SIMULATOR_INTERVAL_S", "60"))
+
+STATE_FILE = Path(__file__).resolve().parent / "simulator_worker_state.json"
+OVERRIDE_FILE = Path(__file__).resolve().parent / "simulator_override.json"
+
+# In-memory singleton cache and concurrency lock
+_nodes: dict[str, NodeState] | None = None
+_last_executed_minute: str | None = None
+_cycle_lock = threading.Lock()
+
+
+def get_ingest_config() -> tuple[str, str]:
+    """
+    Resolves (api_base_url, device_key) based on environment and APP_ENV.
+    In production mode (APP_ENV=production), localhost defaults are strictly rejected.
+    """
+    app_env = (os.environ.get("APP_ENV") or "development").strip().lower()
+    api_base = os.environ.get("POPULATION_API_BASE") or os.environ.get("POPULATION_API_BASE_URL")
+    dev_key = os.environ.get("POPULATION_DEVICE_KEY")
+
+    if app_env == "production":
+        if not api_base or "localhost" in api_base or "127.0.0.1" in api_base:
+            raise ValueError(
+                "Production configuration error: POPULATION_API_BASE / POPULATION_API_BASE_URL "
+                "must be explicitly set to a remote server in production mode (localhost is not permitted)."
+            )
+        if not dev_key:
+            raise ValueError(
+                "Production configuration error: POPULATION_DEVICE_KEY must be explicitly configured in production mode."
+            )
+        return api_base.rstrip("/"), dev_key
+    else:
+        api_base = (api_base or "http://localhost:8000").rstrip("/")
+        dev_key = dev_key or "Ms5C-o-MDq3OUJfa10nr_k1ANiqcnU3oME5uNVVAAMk"
+        return api_base, dev_key
 
 
 def aqi_to_pm25(aqi: float) -> float:
@@ -160,7 +191,7 @@ class NodeState:
             self.flame_detected = False
             self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
 
-    def build_payload(self) -> dict:
+    def build_payload(self, ts: str | None = None) -> dict:
         pm25 = aqi_to_pm25(self.cur_aqi)
         globe_c = round(self.cur_air + 2.0 + random.uniform(-0.1, 0.1), 2)
         wbgt = calculate_wbgt(self.cur_air, self.cur_rh, globe_c)
@@ -175,7 +206,7 @@ class NodeState:
             "node_id": self.node_id,
             "site_id": self.site_id,
             "zone": self.zone,
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": ts if ts is not None else datetime.now(timezone.utc).isoformat(),
             "air_c": self.cur_air,
             "rh_pct": self.cur_rh,
             "pressure_hpa": self.cur_p,
@@ -204,8 +235,11 @@ def check_for_override(nodes: dict[str, NodeState]):
         logger.warning("Error reading override file: %s", exc)
 
 
-def send_packet(node_id: str, payload: dict) -> bool:
-    url = f"{POPULATION_API_BASE}/api/v1/ingest/readings"
+def send_packet(node_id: str, payload: dict, api_base: str | None = None, device_key: str | None = None) -> bool:
+    if not api_base or not device_key:
+        api_base, device_key = get_ingest_config()
+
+    url = f"{api_base}/api/v1/ingest/readings"
     data = json.dumps(payload).encode("utf-8")
     req = urllib_request.Request(
         url,
@@ -213,7 +247,7 @@ def send_packet(node_id: str, payload: dict) -> bool:
         headers={
             "Content-Type": "application/json",
             "X-Node-Id": node_id,
-            "X-Device-Key": DEVICE_KEY,
+            "X-Device-Key": device_key,
         },
         method="POST",
     )
@@ -223,30 +257,120 @@ def send_packet(node_id: str, payload: dict) -> bool:
     except URLError as err:
         logger.warning("Ingest push failed for %s: %s", node_id, err)
         return False
+    except Exception as err:
+        logger.warning("Unexpected error during packet send for %s: %s", node_id, err)
+        return False
 
 
-def run_worker_loop():
-    logger.info("Starting Allevia Simulator Server-Side Worker (cadence=%ds)", CADENCE_SECONDS)
+def get_nodes(state_file: Path | None = None) -> dict[str, NodeState]:
+    """
+    Returns the in-memory singleton nodes dictionary, initializing or restoring
+    state from state_file (default STATE_FILE) if not yet loaded.
+    """
+    global _nodes, _last_executed_minute
+    if _nodes is not None:
+        return _nodes
+
+    target_state_file = state_file or STATE_FILE
     nodes = {nid: NodeState(nid, cfg) for nid, cfg in NODE_CONFIGS.items()}
 
-    while True:
+    if target_state_file.exists():
+        try:
+            saved_data = json.loads(target_state_file.read_text())
+            nodes_data = saved_data.get("nodes", {})
+            for nid, node in nodes.items():
+                if nid in nodes_data:
+                    info = nodes_data[nid]
+                    curr = info.get("current", {})
+                    if "air_c" in curr:
+                        node.cur_air = float(curr["air_c"])
+                    if "rh_pct" in curr:
+                        node.cur_rh = float(curr["rh_pct"])
+                    if "pressure_hpa" in curr:
+                        node.cur_p = float(curr["pressure_hpa"])
+                    if "aqi" in curr:
+                        node.cur_aqi = float(curr["aqi"])
+                    if "battery_pct" in curr:
+                        node.cur_battery = float(curr["battery_pct"])
+                    node.flame_detected = info.get("flame_detected", False)
+                    node.flame_ticks = int(info.get("flame_ticks", 0))
+                    node.override = info.get("override", None)
+                    node.last_sent = info.get("last_payload", None)
+
+            _last_executed_minute = saved_data.get("aligned_minute") or saved_data.get("last_executed_minute")
+            logger.info("Restored node states and aligned minute (%s) from %s", _last_executed_minute, target_state_file)
+        except Exception as exc:
+            logger.warning("Failed to restore state from %s: %s; starting from baseline", target_state_file, exc)
+
+    _nodes = nodes
+    return _nodes
+
+
+def save_state(nodes: dict[str, NodeState], state_dump: dict, state_file: Path | None = None) -> None:
+    """Persists node state dictionary to JSON file."""
+    target_state_file = state_file or STATE_FILE
+    try:
+        target_state_file.write_text(json.dumps(state_dump, indent=2))
+    except Exception as exc:
+        logger.warning("Failed to save state to %s: %s", target_state_file, exc)
+
+
+def run_one_cycle(force: bool = False, state_file: Path | None = None) -> dict:
+    """
+    Executes exactly ONE simulation cycle:
+    - Resolves ingest configuration (strict production validation).
+    - Checks for pending user overrides.
+    - Synchronizes state with minute alignment to handle scheduler jitter.
+    - If already executed for the current minute and force=False, returns a skipped result.
+    - For each simulated node (N01-N05, excluding N06):
+        1. Ticks decay / random-walk dynamics.
+        2. Builds canonical telemetry packet with aligned minute timestamp.
+        3. Sends packet to main Allevia ingest backend.
+    - Persists current values, active overrides, and decay progress to disk.
+    - Thread-safe via _cycle_lock so overlapping scheduler calls cannot collide.
+    """
+    global _last_executed_minute
+    target_state_file = state_file or STATE_FILE
+
+    with _cycle_lock:
+        now = datetime.now(timezone.utc)
+        aligned_dt = now.replace(second=0, microsecond=0)
+        aligned_ts = aligned_dt.isoformat()
+
+        nodes = get_nodes(target_state_file)
+
+        # Scheduler jitter check: align to the minute and prevent duplicate (node_id, ts) packets
+        if not force and _last_executed_minute == aligned_ts:
+            logger.info("Scheduler cycle for minute %s already executed. Returning skipped result.", aligned_ts)
+            return {
+                "status": "skipped",
+                "reason": "already_executed_for_minute",
+                "minute": aligned_ts,
+                "timestamp": now.isoformat(),
+            }
+
+        # Check and apply any pending user override
         check_for_override(nodes)
 
-        timestamp_str = datetime.now(timezone.utc).isoformat()
+        # Ingest configuration check (raises ValueError if invalid in production)
+        api_base, device_key = get_ingest_config()
+
         state_dump = {
-            "last_cycle_at": timestamp_str,
+            "last_cycle_at": now.isoformat(),
+            "aligned_minute": aligned_ts,
             "cadence_seconds": CADENCE_SECONDS,
             "reserved_hardware_node_id": RESERVED_HARDWARE_NODE_ID,
             "nodes": {},
         }
 
+        results = {}
         for nid, node in nodes.items():
             if nid == RESERVED_HARDWARE_NODE_ID or nid == "N06":
                 continue
 
             node.tick()
-            payload = node.build_payload()
-            success = send_packet(nid, payload)
+            payload = node.build_payload(ts=aligned_ts)
+            success = send_packet(nid, payload, api_base=api_base, device_key=device_key)
             node.last_sent = payload
 
             state_dump["nodes"][nid] = {
@@ -255,6 +379,7 @@ def run_worker_loop():
                 "current": {
                     "air_c": node.cur_air,
                     "rh_pct": node.cur_rh,
+                    "pressure_hpa": node.cur_p,
                     "pm25": payload["pm25"],
                     "wbgt_c": calculate_wbgt(node.cur_air, node.cur_rh, payload["globe_c"]),
                     "battery_pct": node.cur_battery,
@@ -267,14 +392,45 @@ def run_worker_loop():
                     "battery_pct": node.base_battery,
                 },
                 "has_override": node.override is not None,
+                "override": node.override,
+                "flame_detected": node.flame_detected,
+                "flame_ticks": node.flame_ticks,
                 "http_success": success,
                 "last_payload": payload,
             }
-            logger.info("Node %s (Zone %s): air=%.1f°C rh=%.1f%% pm25=%.1f wbgt=%.1f bat=%.1f%% -> %s",
-                        nid, node.zone, node.cur_air, node.cur_rh, payload["pm25"],
-                        state_dump["nodes"][nid]["current"]["wbgt_c"], node.cur_battery, "OK" if success else "FAIL")
+            results[nid] = "OK" if success else "FAIL"
+            logger.info(
+                "Node %s (Zone %s): air=%.1f°C rh=%.1f%% pm25=%.1f wbgt=%.1f bat=%.1f%% -> %s",
+                nid, node.zone, node.cur_air, node.cur_rh, payload["pm25"],
+                state_dump["nodes"][nid]["current"]["wbgt_c"], node.cur_battery,
+                "OK" if success else "FAIL"
+            )
 
-        STATE_FILE.write_text(json.dumps(state_dump, indent=2))
+        state_dump["last_executed_minute"] = aligned_ts
+        save_state(nodes, state_dump, state_file=target_state_file)
+        _last_executed_minute = aligned_ts
+
+        return {
+            "status": "success",
+            "minute": aligned_ts,
+            "timestamp": now.isoformat(),
+            "nodes_sent": len(results),
+            "results": results,
+        }
+
+
+def run_worker_loop():
+    logger.info("Starting Allevia Simulator Server-Side Worker (cadence=%ds)", CADENCE_SECONDS)
+    # Ensure nodes initialized/restored
+    get_nodes()
+
+    while True:
+        try:
+            result = run_one_cycle()
+            logger.info("Worker loop tick completed: status=%s, minute=%s", result.get("status"), result.get("minute"))
+        except Exception as exc:
+            logger.error("Error in worker cycle: %s", exc)
+
         time.sleep(CADENCE_SECONDS)
 
 

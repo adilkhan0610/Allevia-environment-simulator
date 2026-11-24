@@ -1,7 +1,8 @@
 from typing import List, Union
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import json
+import os
 
 
 class Settings(BaseSettings):
@@ -41,8 +42,34 @@ class Settings(BaseSettings):
     ZONE_ID: str = "B"
     POPULATION_DEVICE_KEY: str = ""
 
+    # Scheduler Protected Tick Token
+    TICK_TOKEN: str = ""
+
+    @model_validator(mode="after")
+    def validate_production_config(self) -> "Settings":
+        # Resolve POPULATION_API_BASE if POPULATION_API_BASE_URL wasn't explicitly given
+        alt_base = os.environ.get("POPULATION_API_BASE")
+        if alt_base and self.POPULATION_API_BASE_URL == "http://localhost:8000":
+            self.POPULATION_API_BASE_URL = alt_base
+
+        if self.APP_ENV.lower() == "production":
+            if (
+                not self.POPULATION_API_BASE_URL
+                or "localhost" in self.POPULATION_API_BASE_URL
+                or "127.0.0.1" in self.POPULATION_API_BASE_URL
+            ):
+                raise ValueError(
+                    "Production configuration error: POPULATION_API_BASE_URL / POPULATION_API_BASE "
+                    "cannot default to localhost in production mode."
+                )
+            if not self.POPULATION_DEVICE_KEY:
+                raise ValueError(
+                    "Production configuration error: POPULATION_DEVICE_KEY must be set in production mode."
+                )
+        return self
+
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )
