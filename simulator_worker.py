@@ -189,7 +189,25 @@ class NodeState:
             self.cur_p = round(self.cur_p + theta * (self.base_p - self.cur_p) + random.uniform(-0.2, 0.2), 1)
             self.cur_aqi = round(max(15.0, min(75.0, self.cur_aqi + theta * (self.base_aqi - self.cur_aqi) + random.uniform(-2.0, 2.0))), 0)
             self.flame_detected = False
+<<<<<<< Updated upstream
             self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
+=======
+<<<<<<< HEAD
+            self.cur_battery = self.base_battery
+=======
+            self.cur_battery = 14.0 if (self.cur_battery <= 35 or self.cur_battery == 14.0) else 95.0
+
+    def build_payload(self, ts: str | None = None) -> dict:
+        pm25 = aqi_to_pm25(self.cur_aqi)
+        globe_c = round(self.cur_air + 2.0 + random.uniform(-0.1, 0.1), 2)
+        wbgt = calculate_wbgt(self.cur_air, self.cur_rh, globe_c)
+
+        # Raw gas ADC estimates
+        mq2_adc = int(round(135 + (self.cur_aqi / 500.0) * 500 + random.uniform(-3, 3)))
+        mq3_adc = int(round(75 + (self.cur_aqi / 500.0) * 450 + random.uniform(-2, 2)))
+        mq135_adc = int(round(120 + (self.cur_aqi / 500.0) * 600 + random.uniform(-3, 3)))
+>>>>>>> 9e726fbbf87086ce69256db821de2ef595517dd5
+>>>>>>> Stashed changes
 
     def build_payload(self, ts: str | None = None) -> dict:
         pm25 = aqi_to_pm25(self.cur_aqi)
