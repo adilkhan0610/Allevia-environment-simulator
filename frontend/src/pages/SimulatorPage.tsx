@@ -16,13 +16,13 @@ export const SimulatorPage: React.FC = () => {
 
   const start = useSimulatorStore((s) => s.start)
   const reset = useSimulatorStore((s) => s.reset)
-  const scenarioLevel = useSimulatorStore((s) => s.scenarioLevel)
+  const status = useSimulatorStore((s) => s.status)
+  const selectedNode = useSimulatorStore((s) => s.params.selectedNode)
 
   const theme = useThemeStore((s) => s.theme)
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   const handleAction = async () => {
-    // Toggles between Elevated and Alert for all zones on upcoming minute cycle
     start()
     if (sessionId) {
       try {
@@ -33,7 +33,7 @@ export const SimulatorPage: React.FC = () => {
     }
   }
 
-  const actionLabel = scenarioLevel === 'alert' ? 'Reset to Elevated' : 'Start / Trigger Spike'
+  const actionLabel = `Trigger Spike · Zone ${['A', 'B', 'C', 'D', 'E'][selectedNode - 1] || 'A'}`
 
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-[var(--background)] text-[var(--foreground)] select-none transition-colors">

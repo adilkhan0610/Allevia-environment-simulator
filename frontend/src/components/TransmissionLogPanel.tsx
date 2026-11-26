@@ -13,7 +13,6 @@ export const TransmissionLogPanel: React.FC = () => {
   const nodeStates = useSimulatorStore((s) => s.nodeStates)
   const lastSentPayload = useSimulatorStore((s) => s.lastSentPayload)
   const logs = useSimulatorStore((s) => s.logs)
-  const scenarioLevel = useSimulatorStore((s) => s.scenarioLevel)
   const tickSecond = useSimulatorStore((s) => s.tickSecond)
   const params = useSimulatorStore((s) => s.params)
   const logContainerRef = useRef<HTMLDivElement>(null)
@@ -118,6 +117,7 @@ export const TransmissionLogPanel: React.FC = () => {
             {nodesList.map((node) => {
               const isSelected = node.nodeId === currentNode.nodeId
               const isSpike = Boolean(node.override)
+              const spikeLabel = node.override?.awaitingFirstDispatch ? 'Alert' : 'Decaying'
               const cur = node.current
               const base = node.baseline
 
@@ -145,13 +145,13 @@ export const TransmissionLogPanel: React.FC = () => {
                       )}
                     </div>
                     <div className="shrink-0 whitespace-nowrap">
-                      {isSpike || scenarioLevel === 'alert' ? (
+                      {isSpike ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30 animate-pulse shrink-0 whitespace-nowrap">
-                          {scenarioLevel === 'alert' ? 'Alert Level' : 'Decaying Spike'}
+                          {spikeLabel}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 whitespace-nowrap">
-                          Elevated Base
+                          Normal
                         </span>
                       )}
                     </div>

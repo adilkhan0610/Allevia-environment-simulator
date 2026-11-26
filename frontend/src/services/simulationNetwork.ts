@@ -85,12 +85,8 @@ export interface NodeSimConfig {
 }
 
 /**
- * Realistic UAE November Elevated Baselines (Continuously maintained instead of normal)
- * Zone A: Dust & thermal overload (Elevated: air_c=38, rh_pct=35, globe_c=46, pm25=95, mq2=160, mq3=80, mq135=200, wbgt=31)
- * Zone B: Same as Zone A
- * Zone C: Chemical vapors & inhalation (Elevated: air_c=33, rh_pct=55, globe_c=36, pm25=45, mq2=350, mq3=700, mq135=900, wbgt=28.6)
- * Zone D: Thermal heat stress (Elevated: air_c=36, rh_pct=50, globe_c=41, pm25=12, mq2=145, mq3=75, mq135=180, wbgt=31)
- * Zone E: Retained baseline
+ * Realistic UAE November normal baselines (WBGT ~22–23.5°C, well below the 28°C Watch tier).
+ * Alert spikes are applied per zone on demand and decay back to these values.
  */
 export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
   N01: {
@@ -100,17 +96,17 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'Mussafah Industrial Area',
     label: 'Node 1 — Zone A (Mussafah)',
     baseline: {
-      air_c: 38.0,
-      rh_pct: 35.0,
+      air_c: 28.2,
+      rh_pct: 48.0,
       pressure_hpa: 1014.2,
-      aqi: 171,
-      pm25: 95.0,
-      globe_c: 46.0,
-      wbgt_c: 31.0,
-      mq2_adc: 160,
-      mq3_adc: 80,
-      mq135_adc: 200,
-      battery_pct: 95.0,
+      aqi: 45,
+      pm25: 10.8,
+      globe_c: 30.2,
+      wbgt_c: 22.8,
+      mq2_adc: 135,
+      mq3_adc: 75,
+      mq135_adc: 120,
+      battery_pct: 94.5,
       flame_ir_detected: false,
       charging: false,
     },
@@ -122,16 +118,16 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'Industrial City of Abu Dhabi (ICAD)',
     label: 'Node 2 — Zone B (ICAD)',
     baseline: {
-      air_c: 38.0,
-      rh_pct: 35.0,
+      air_c: 28.6,
+      rh_pct: 50.0,
       pressure_hpa: 1013.8,
-      aqi: 171,
-      pm25: 95.0,
-      globe_c: 46.0,
-      wbgt_c: 31.0,
-      mq2_adc: 160,
+      aqi: 48,
+      pm25: 11.5,
+      globe_c: 30.6,
+      wbgt_c: 23.2,
+      mq2_adc: 140,
       mq3_adc: 80,
-      mq135_adc: 200,
+      mq135_adc: 125,
       battery_pct: 95.0,
       flame_ir_detected: false,
       charging: false,
@@ -144,17 +140,17 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'KEZAD Al Taweelah',
     label: 'Node 3 — Zone C (KEZAD)',
     baseline: {
-      air_c: 33.0,
-      rh_pct: 55.0,
+      air_c: 27.8,
+      rh_pct: 54.0,
       pressure_hpa: 1015.0,
-      aqi: 124,
-      pm25: 45.0,
-      globe_c: 36.0,
-      wbgt_c: 28.6,
-      mq2_adc: 350,
-      mq3_adc: 700,
-      mq135_adc: 900,
-      battery_pct: 14.0,
+      aqi: 42,
+      pm25: 10.1,
+      globe_c: 29.8,
+      wbgt_c: 23.0,
+      mq2_adc: 130,
+      mq3_adc: 72,
+      mq135_adc: 115,
+      battery_pct: 92.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -166,17 +162,17 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
     zoneName: 'Zayed Port (Mina Zayed)',
     label: 'Node 4 — Zone D (Zayed Port)',
     baseline: {
-      air_c: 36.0,
-      rh_pct: 50.0,
+      air_c: 27.4,
+      rh_pct: 58.0,
       pressure_hpa: 1015.5,
-      aqi: 50,
-      pm25: 12.0,
-      globe_c: 41.0,
-      wbgt_c: 31.0,
-      mq2_adc: 145,
-      mq3_adc: 75,
-      mq135_adc: 180,
-      battery_pct: 95.0,
+      aqi: 40,
+      pm25: 9.6,
+      globe_c: 29.2,
+      wbgt_c: 23.1,
+      mq2_adc: 128,
+      mq3_adc: 70,
+      mq135_adc: 110,
+      battery_pct: 93.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -198,7 +194,7 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
       mq2_adc: 132,
       mq3_adc: 74,
       mq135_adc: 118,
-      battery_pct: 14.0,
+      battery_pct: 94.0,
       flame_ir_detected: false,
       charging: false,
     },
@@ -206,7 +202,8 @@ export const UAE_NOVEMBER_BASELINES: Record<string, NodeSimConfig> = {
 };
 
 /**
- * Scenario Alert Readings triggered on operator trigger
+ * Per-zone alert readings. A triggered spike jumps the selected zone to these
+ * values inside the next shared minute packet, then decays back to normal.
  */
 export const ZONE_ALERT_READINGS: Record<string, NodeMetrics> = {
   N01: {
@@ -297,11 +294,11 @@ export function stepNormalVariation(current: NodeMetrics, base: NodeMetrics): No
   const air_c = Number((current.air_c + theta * (base.air_c - current.air_c) + rand(-0.15, 0.15)).toFixed(2));
   const rh_pct = Number(Math.max(10, Math.min(95, current.rh_pct + theta * (base.rh_pct - current.rh_pct) + rand(-0.4, 0.4))).toFixed(1));
   const pressure_hpa = Number((current.pressure_hpa + theta * (base.pressure_hpa - current.pressure_hpa) + rand(-0.2, 0.2)).toFixed(1));
-  const aqi = base.aqi;
-  const pm25 = Number(Math.max(0, current.pm25 + theta * (base.pm25 - current.pm25) + rand(-0.3, 0.3)).toFixed(1));
+  const aqi = Math.max(15, Math.min(80, Math.round(current.aqi + theta * (base.aqi - current.aqi) + rand(-2, 2))));
+  const pm25 = aqiToPm25(aqi);
 
-  const globe_c = Number((current.globe_c + theta * (base.globe_c - current.globe_c) + rand(-0.1, 0.1)).toFixed(2));
-  const wbgt_c = base.wbgt_c;
+  const globe_c = Number((air_c + 2.0 + rand(-0.2, 0.2)).toFixed(2));
+  const wbgt_c = calculateWBGT(air_c, rh_pct, globe_c);
 
   const mq2_adc = Math.max(0, Math.round(current.mq2_adc + theta * (base.mq2_adc - current.mq2_adc) + rand(-1.5, 1.5)));
   const mq3_adc = Math.max(0, Math.round(current.mq3_adc + theta * (base.mq3_adc - current.mq3_adc) + rand(-1.5, 1.5)));
@@ -337,6 +334,8 @@ export interface OverrideState {
   battery: 'normal' | 'low';
   charging?: boolean;
   flameTicksRemaining: number;
+  /** First minute packet sends the full alert value; later cycles decay. */
+  awaitingFirstDispatch?: boolean;
 }
 
 /**
@@ -442,6 +441,7 @@ export function stepSpikeDecay(
     : {
       ...override,
       flameTicksRemaining,
+      awaitingFirstDispatch: false,
     };
 
   return { nextMetrics, nextOverride: nextOverrideState };
