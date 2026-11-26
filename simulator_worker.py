@@ -97,11 +97,11 @@ def calculate_wbgt(air_c: float, rh_pct: float, globe_c: float | None = None) ->
 
 
 NODE_CONFIGS = {
-    "N01": {"site_id": "S13", "zone": "A", "zone_name": "Mussafah Industrial Area", "air_c": 38.0, "rh_pct": 35.0, "globe_c": 46.0, "pm25": 95.0, "mq2_adc": 160, "mq3_adc": 80, "mq135_adc": 200, "pressure_hpa": 1014.2, "aqi": 171, "battery_pct": 95.0, "wbgt": 31.0},
-    "N02": {"site_id": "S03", "zone": "B", "zone_name": "Industrial City of Abu Dhabi (ICAD)", "air_c": 38.0, "rh_pct": 35.0, "globe_c": 46.0, "pm25": 95.0, "mq2_adc": 160, "mq3_adc": 80, "mq135_adc": 200, "pressure_hpa": 1013.8, "aqi": 171, "battery_pct": 95.0, "wbgt": 31.0},
-    "N03": {"site_id": "S17", "zone": "C", "zone_name": "KEZAD Al Taweelah", "air_c": 33.0, "rh_pct": 55.0, "globe_c": 36.0, "pm25": 45.0, "mq2_adc": 350, "mq3_adc": 700, "mq135_adc": 900, "pressure_hpa": 1015.0, "aqi": 124, "battery_pct": 14.0, "wbgt": 28.6},
-    "N04": {"site_id": "S20", "zone": "D", "zone_name": "Zayed Port (Mina Zayed)", "air_c": 36.0, "rh_pct": 50.0, "globe_c": 41.0, "pm25": 12.0, "mq2_adc": 145, "mq3_adc": 75, "mq135_adc": 180, "pressure_hpa": 1015.5, "aqi": 50, "battery_pct": 95.0, "wbgt": 31.0},
-    "N05": {"site_id": "S22", "zone": "E", "zone_name": "Al Mafraq Workers Residential City", "air_c": 28.0, "rh_pct": 46.0, "globe_c": 29.9, "pm25": 10.5, "mq2_adc": 132, "mq3_adc": 74, "mq135_adc": 118, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 14.0, "wbgt": 22.5},
+    "N01": {"site_id": "S13", "zone": "A", "zone_name": "Mussafah Industrial Area", "air_c": 28.2, "rh_pct": 48.0, "globe_c": 30.2, "pm25": 10.8, "mq2_adc": 135, "mq3_adc": 75, "mq135_adc": 120, "pressure_hpa": 1014.2, "aqi": 45, "battery_pct": 94.5, "wbgt": 22.8},
+    "N02": {"site_id": "S03", "zone": "B", "zone_name": "Industrial City of Abu Dhabi (ICAD)", "air_c": 28.6, "rh_pct": 50.0, "globe_c": 30.6, "pm25": 11.5, "mq2_adc": 140, "mq3_adc": 80, "mq135_adc": 125, "pressure_hpa": 1013.8, "aqi": 48, "battery_pct": 95.0, "wbgt": 23.2},
+    "N03": {"site_id": "S17", "zone": "C", "zone_name": "KEZAD Al Taweelah", "air_c": 27.8, "rh_pct": 54.0, "globe_c": 29.8, "pm25": 10.1, "mq2_adc": 130, "mq3_adc": 72, "mq135_adc": 115, "pressure_hpa": 1015.0, "aqi": 42, "battery_pct": 92.0, "wbgt": 23.0},
+    "N04": {"site_id": "S20", "zone": "D", "zone_name": "Zayed Port (Mina Zayed)", "air_c": 27.4, "rh_pct": 58.0, "globe_c": 29.2, "pm25": 9.6, "mq2_adc": 128, "mq3_adc": 70, "mq135_adc": 110, "pressure_hpa": 1015.5, "aqi": 40, "battery_pct": 93.0, "wbgt": 23.1},
+    "N05": {"site_id": "S22", "zone": "E", "zone_name": "Al Mafraq Workers Residential City", "air_c": 28.0, "rh_pct": 46.0, "globe_c": 29.9, "pm25": 10.5, "mq2_adc": 132, "mq3_adc": 74, "mq135_adc": 118, "pressure_hpa": 1014.0, "aqi": 44, "battery_pct": 94.0, "wbgt": 22.5},
 }
 
 ZONE_ALERT_CONFIGS = {
@@ -145,9 +145,28 @@ class NodeState:
 
         self.override: dict | None = None
         self.last_sent: dict | None = None
+        # First cycle after a spike sends the full alert value; later cycles decay.
+        self.spike_armed = False
+
+    def snap_to_baseline(self):
+        self.cur_air = self.base_air
+        self.cur_rh = self.base_rh
+        self.cur_p = self.base_p
+        self.cur_aqi = self.base_aqi
+        self.cur_battery = self.base_battery
+        self.cur_pm25 = self.base_pm25
+        self.cur_globe = self.base_globe
+        self.cur_mq2 = self.base_mq2
+        self.cur_mq3 = self.base_mq3
+        self.cur_mq135 = self.base_mq135
+        self.flame_detected = False
+        self.flame_ticks = 0
+        self.override = None
+        self.spike_armed = False
 
     def apply_override(self, override: dict):
         self.override = override
+        self.spike_armed = True
         if "temperature" in override or "air_c" in override:
             self.cur_air = float(override.get("temperature", override.get("air_c", self.cur_air)))
         if "humidity" in override or "rh_pct" in override:
@@ -179,6 +198,10 @@ class NodeState:
             self.cur_battery = 14.0 if (val <= 35 or val == 14.0) else 95.0
 
     def tick(self):
+        if self.spike_armed:
+            # Keep the armed alert values for this minute's shared packet.
+            self.spike_armed = False
+            return
         if self.override:
             # Decay towards baseline: value = baseline + (value - baseline) * k + noise
             k_pm = 0.82
@@ -228,7 +251,7 @@ class NodeState:
                 self.cur_mq3 = self.base_mq3
                 self.cur_mq135 = self.base_mq135
         else:
-            # Bounded mean-reverting random walk around continuous elevated baseline
+            # Bounded mean-reverting random walk around the normal baseline
             theta = 0.25
             self.cur_air = round(self.cur_air + theta * (self.base_air - self.cur_air) + random.uniform(-0.15, 0.15), 2)
             self.cur_rh = round(max(10.0, min(95.0, self.cur_rh + theta * (self.base_rh - self.cur_rh) + random.uniform(-0.4, 0.4))), 1)
@@ -287,19 +310,10 @@ def check_for_override(nodes: dict[str, NodeState]):
                     node.apply_override(ZONE_ALERT_CONFIGS[nid])
             OVERRIDE_FILE.unlink()
             return
-        elif level == "elevated":
-            logger.info("Resetting all nodes to ELEVATED level baseline")
-            for nid, node in nodes.items():
-                if nid in NODE_CONFIGS:
-                    node.override = None
-                    node.cur_air = node.base_air
-                    node.cur_rh = node.base_rh
-                    node.cur_p = node.base_p
-                    node.cur_pm25 = node.base_pm25
-                    node.cur_globe = node.base_globe
-                    node.cur_mq2 = node.base_mq2
-                    node.cur_mq3 = node.base_mq3
-                    node.cur_mq135 = node.base_mq135
+        elif level in ("elevated", "normal"):
+            logger.info("Resetting all nodes to normal baseline")
+            for node in nodes.values():
+                node.snap_to_baseline()
             OVERRIDE_FILE.unlink()
             return
 
@@ -372,7 +386,20 @@ def get_nodes(state_file: Path | None = None) -> dict[str, NodeState]:
                     node.flame_detected = info.get("flame_detected", False)
                     node.flame_ticks = int(info.get("flame_ticks", 0))
                     node.override = info.get("override", None)
+                    node.spike_armed = bool(info.get("spike_armed", False))
                     node.last_sent = info.get("last_payload", None)
+                    if "pm25" in curr:
+                        node.cur_pm25 = float(curr["pm25"])
+                    if "globe_c" in curr:
+                        node.cur_globe = float(curr["globe_c"])
+                    if "mq2_adc" in curr:
+                        node.cur_mq2 = int(curr["mq2_adc"])
+                    if "mq3_adc" in curr:
+                        node.cur_mq3 = int(curr["mq3_adc"])
+                    if "mq135_adc" in curr:
+                        node.cur_mq135 = int(curr["mq135_adc"])
+                    if not node.override and not node.spike_armed:
+                        node.snap_to_baseline()
 
             _last_executed_minute = saved_data.get("aligned_minute") or saved_data.get("last_executed_minute")
             logger.info("Restored node states and aligned minute (%s) from %s", _last_executed_minute, target_state_file)
@@ -470,6 +497,7 @@ def run_one_cycle(force: bool = False, state_file: Path | None = None) -> dict:
                 },
                 "has_override": node.override is not None,
                 "override": node.override,
+                "spike_armed": node.spike_armed,
                 "flame_detected": node.flame_detected,
                 "flame_ticks": node.flame_ticks,
                 "http_success": success,

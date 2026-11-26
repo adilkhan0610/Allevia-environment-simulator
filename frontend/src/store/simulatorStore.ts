@@ -13,7 +13,6 @@ import {
 } from '@/services/simulationNetwork'
 
 export type SimStatus = 'idle' | 'running' | 'completed' | 'stopped'
-export type ScenarioLevel = 'elevated' | 'alert'
 export type GasType = 'co' | 'smoke' | 'lpg'
 export type NodeNumber = 1 | 2 | 3 | 4 | 5
 export type BatteryStatus = 'normal' | 'low'
@@ -63,7 +62,6 @@ export interface NodeRuntimeState {
 
 export interface SimulatorState {
   status: SimStatus
-  scenarioLevel: ScenarioLevel
   dirty: boolean
   baseParams: ParameterValues
   params: ParameterValues
@@ -104,9 +102,9 @@ export interface SimulatorState {
 }
 
 const DEFAULT_PARAMS: ParameterValues = {
-  temperature: 38.0,
-  humidity: 35,
-  airQuality: 171,
+  temperature: 28.0,
+  humidity: 50,
+  airQuality: 45,
   infrared: 12,
   pressure: 1014,
   gases: [],
@@ -188,7 +186,6 @@ function broadcastSync(payload: any) {
 
 export const useSimulatorStore = create<SimulatorState>((set, get) => ({
   status: 'running',
-  scenarioLevel: 'elevated',
   dirty: false,
   baseParams: { ...DEFAULT_PARAMS },
   params: { ...DEFAULT_PARAMS },
@@ -335,35 +332,36 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => ({
     get().tickSecond()
   },
 
-  // Dispatches readings for every node (N01-N05) every 60s
+  // One shared minute packet for every node. A freshly armed spike is sent at
+  // full alert on this cycle; later cycles decay that zone back to normal.
   dispatchNetworkCycle: async () => {
-    const { nodeStates, reservedHardwareNodeId, logs, totalNetworkTransmissions, scenarioLevel } = get()
+    const { nodeStates, reservedHardwareNodeId, logs, totalNetworkTransmissions } = get()
     const nextStates = { ...nodeStates }
     const tsStr = new Date().toISOString()
     let lastPayload: any = null
     const cycleLogs: string[] = []
+    let sentCount = 0
 
     for (const [nid, node] of Object.entries(nextStates)) {
       if (reservedHardwareNodeId && nid === reservedHardwareNodeId) {
-        continue // Skip hardware node
+        continue
       }
-
-      // Base target for this cycle based on scenarioLevel
-      const baseTarget = scenarioLevel === 'alert'
-        ? (ZONE_ALERT_READINGS[nid] || node.baseline)
-        : node.baseline
 
       let updatedMetrics: NodeMetrics
       let updatedOverride: OverrideState | null = node.override
+      let tag = 'NORMAL'
 
-      if (node.override) {
-        // Apply exponential decay if custom override
-        const step = stepSpikeDecay(node.current, baseTarget, node.override)
+      if (node.override?.awaitingFirstDispatch) {
+        updatedMetrics = node.current
+        updatedOverride = { ...node.override, awaitingFirstDispatch: false }
+        tag = 'ALERT'
+      } else if (node.override) {
+        const step = stepSpikeDecay(node.current, node.baseline, node.override)
         updatedMetrics = step.nextMetrics
         updatedOverride = step.nextOverride
+        tag = updatedOverride ? 'DECAYING' : 'NORMAL'
       } else {
-        // Natural bounded random walk around target baseline
-        updatedMetrics = stepNormalVariation(node.current, baseTarget)
+        updatedMetrics = stepNormalVariation(node.current, node.baseline)
       }
 
       const payload = {
@@ -388,6 +386,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => ({
       lastPayload = payload
       sendPacketDirect(payload)
       broadcastSync(payload)
+      sentCount += 1
 
       nextStates[nid] = {
         ...node,
@@ -396,7 +395,7 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => ({
         lastSentPayload: payload,
       }
 
-      cycleLogs.push(`${node.nodeId} (Zone ${node.zone}): PM2.5=${updatedMetrics.pm25} µg/m³, WBGT=${updatedMetrics.wbgt_c}°C [${scenarioLevel.toUpperCase()}]`)
+      cycleLogs.push(`${node.nodeId} (Zone ${node.zone}): PM2.5=${updatedMetrics.pm25} µg/m³, WBGT=${updatedMetrics.wbgt_c}°C [${tag}]`)
     }
 
     const timeLabel = new Date().toLocaleTimeString('en-GB')
@@ -406,50 +405,57 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => ({
       totalNetworkTransmissions: totalNetworkTransmissions + 1,
       logs: [
         ...logs.slice(-25),
-        `[${timeLabel}] 60s Cycle dispatched for all nodes (${Object.keys(nextStates).length} packets) [${scenarioLevel.toUpperCase()}]:`,
-        ...cycleLogs.slice(0, 4).map((l) => `  ↳ ${l}`),
+        `[${timeLabel}] 60s cycle sent all zones together (${sentCount} packets):`,
+        ...cycleLogs.map((l) => `  ↳ ${l}`),
       ],
     })
   },
 
-  // Trigger button toggles between ELEVATED and ALERT for all zones in upcoming minute cycle
+  // Arms the selected zone at its alert readings. Nothing is posted here —
+  // the value rides the next shared minute packet, then decays to normal.
   triggerImmediateSpike: async () => {
-    const { scenarioLevel, nodeStates, params, logs } = get()
-    const nextLevel: ScenarioLevel = scenarioLevel === 'elevated' ? 'alert' : 'elevated'
+    const { nodeStates, params, logs } = get()
+    const targetProfile = NODE_PROFILES[params.selectedNode] || NODE_PROFILES[1]
+    const nid = targetProfile.nodeId
+    const targetNode = nodeStates[nid]
+    if (!targetNode) return
 
-    // Update all nodes' current metrics immediately to match target level
-    const nextStates = { ...nodeStates }
-    for (const [nid, node] of Object.entries(nextStates)) {
-      const targetMetrics = nextLevel === 'alert'
-        ? { ...(ZONE_ALERT_READINGS[nid] || node.baseline) }
-        : { ...node.baseline }
-
-      nextStates[nid] = {
-        ...node,
-        current: targetMetrics,
-        override: null,
-      }
+    const alert = ZONE_ALERT_READINGS[nid] || targetNode.baseline
+    const overrideState: OverrideState = {
+      temperature: alert.air_c,
+      humidity: alert.rh_pct,
+      airQuality: alert.aqi,
+      infrared: alert.flame_ir_detected ? 90 : 12,
+      pressure: alert.pressure_hpa,
+      gases: [],
+      battery: alert.battery_pct <= 35 ? 'low' : 'normal',
+      charging: alert.charging,
+      flameTicksRemaining: alert.flame_ir_detected ? 3 : 0,
+      awaitingFirstDispatch: true,
     }
 
-    // Sync parameters panel sliders for currently selected node
-    const targetNodeId = NODE_PROFILES[params.selectedNode]?.nodeId || 'N01'
-    const selMetrics = nextStates[targetNodeId]?.current || nextStates['N01'].current
-
     set({
-      scenarioLevel: nextLevel,
+      status: 'running',
       dirty: false,
-      nodeStates: nextStates,
+      nodeStates: {
+        ...nodeStates,
+        [nid]: {
+          ...targetNode,
+          current: { ...alert },
+          override: overrideState,
+        },
+      },
       params: {
         ...params,
-        temperature: selMetrics.air_c,
-        humidity: selMetrics.rh_pct,
-        airQuality: selMetrics.aqi,
-        pressure: Math.round(selMetrics.pressure_hpa),
+        temperature: alert.air_c,
+        humidity: alert.rh_pct,
+        airQuality: alert.aqi,
+        pressure: Math.round(alert.pressure_hpa),
       },
       logs: [
         ...logs.slice(-27),
-        `[${new Date().toLocaleTimeString()}] Trigger activated: All zones (A, B, C, D) set to ${nextLevel.toUpperCase()} level.`,
-        `  ↳ Updated readings will be dispatched simultaneously across all zones on the upcoming 60s minute cycle.`,
+        `[${new Date().toLocaleTimeString()}] Spike armed for ${nid} (Zone ${targetProfile.zone}) at alert level.`,
+        `  ↳ Temp ${alert.air_c}°C, PM2.5 ${alert.pm25} µg/m³, WBGT ${alert.wbgt_c}°C will join the next shared minute packet, then decay to normal.`,
       ],
     })
   },
@@ -458,12 +464,11 @@ export const useSimulatorStore = create<SimulatorState>((set, get) => ({
     set({
       status: 'running',
       dirty: false,
-      scenarioLevel: 'elevated',
       baseParams: { ...DEFAULT_PARAMS },
       params: { ...DEFAULT_PARAMS },
       countdownSeconds: SIMULATION_CADENCE_SECONDS,
       nodeStates: initializeNodeStates(),
-      logs: ['[00:00] Device values and network telemetry reset to ELEVATED scenario baselines.'],
+      logs: ['[00:00] Device values and network telemetry reset to normal baselines.'],
     })
   },
 }))
